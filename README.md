@@ -17,4 +17,3 @@ php artisan migrate
 /UUID/TAG-NER si trovano gli output dei vari motori di ricerca
 /UUID/Ouput si trova al combinazione dei vari output gli output dei vari motori di ricerca
 
-
