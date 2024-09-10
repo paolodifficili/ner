@@ -1,0 +1,39 @@
+<?php
+/**
+ * Richiesta
+ * 
+ */
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Notifications\Notifiable;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+
+use Illuminate\Support\Facades\Log;
+
+
+class Coda extends Model
+{
+    use HasFactory;
+
+    protected $table = 'coda';
+    protected $primaryKey = 'id';
+
+    protected $fillable = [ 
+        'uuid',
+        'uuid_internal',
+        'file',
+        'type',
+        'status',
+        'description',
+        'last_run_at', 
+        'inventariopc', 
+        'failed',
+        'num_tel_ufficio',
+        'num_cellulare',
+        'email',
+        'problema',
+        'user_id'
+    ];
+}
