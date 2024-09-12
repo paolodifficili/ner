@@ -86,6 +86,13 @@ class QMGR extends Command
 
         switch ($cmd_par1) {
 
+            case "checkConfig":
+
+
+
+
+            break;
+
             case "merge":
 
                 

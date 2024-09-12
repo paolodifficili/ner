@@ -8,10 +8,10 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
-use App\Models\Coda;
+
 use App\Models\Config;
 
-class QueueController extends Controller
+class ConfigController extends Controller
 {
     // $uploadFolder = './final_destination/'; 
     // $logsFolder = './logs/';
@@ -21,16 +21,7 @@ class QueueController extends Controller
      * Display a listing of the resource.
      */
 
-    public function showCoda()
-    {
-        Log::channel('stack')->info('QueueController:index:', [] );
-        $coda = Coda::all();
-        $codaJson = json_encode($coda);
 
-        return response()->json($coda);
-        // return $codaJson;
-        
-    }
 
     public function showConfig()
     {

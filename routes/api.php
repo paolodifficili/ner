@@ -4,6 +4,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\MuxController;
+use App\Http\Controllers\QueueController;
 
 /*
 Route::get('/user', function (Request $request) {
@@ -18,6 +19,10 @@ Route::delete($uri, $callback);
 Route::options($uri, $callback);
 
 */
+
+Route::get('/coda/show', [QueueController::class, 'showCoda']);
+Route::get('/config/show', [QueueController::class, 'showConfig']);
+
 
 Route::get('/batch/{id}', function($id) {
     return "OK!";
