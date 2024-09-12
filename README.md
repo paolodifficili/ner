@@ -17,3 +17,10 @@ php artisan migrate
 /UUID/TAG-NER si trovano gli output dei vari motori di ricerca
 /UUID/Ouput si trova al combinazione dei vari output gli output dei vari motori di ricerca
 
+# https://github.com/paolodifficili/ner.git
+
+# CLONE TO GITHUB
+
+git add .
+git commit -m "%DATE%-%TIME%"
+git push -u -f origin master
