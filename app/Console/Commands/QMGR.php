@@ -86,6 +86,54 @@ class QMGR extends Command
 
         switch ($cmd_par1) {
 
+            case "merge":
+
+                
+                $uuid = "1726138047856";
+                $fname = $uuid . "/out.pdf";
+                Log::channel('stack')->info('QMGR merge:', [$uuid]);
+                
+                $files = Storage::files($uuid);
+                Log::channel('stack')->info('QMGR merge:', [$files]);
+
+
+                $stringToRemove = $uuid . "/";
+
+                $onlyFileName = array_map(function($item) use ($stringToRemove) {
+                    // Rimuovi la stringa dall'inizio (se presente)
+                    $item = preg_replace('/^' . preg_quote($stringToRemove, '/') . '/', '', $item);
+                    
+                    // Converti l'elemento in double
+                    return intval($item);
+                }, $files);
+                
+                // Ordina l'array in maniera crescente
+                sort($onlyFileName);
+
+                Log::channel('stack')->info('QMGR merge:', [$onlyFileName]);
+
+                foreach($onlyFileName as $item ) {
+
+                    // read contents
+                    $file2get = $uuid . "/" . $item;
+                    Log::channel('stack')->info('QMGR read:', [$file2get]);
+                    $contents = Storage::get($file2get);
+
+                    if( $item == 0) {
+                        Log::channel('stack')->info('QMGR write 2:', [$fname]);
+                        Storage::put($fname, $contents);
+                    } else {
+                        Log::channel('stack')->info('QMGR append 2:', [$fname]);
+                        Storage::append($fname, $contents);
+                    }
+
+
+                }
+
+
+            break;
+
+
             case "batch":
                 $faker = Faker::create('SeedData');
 
