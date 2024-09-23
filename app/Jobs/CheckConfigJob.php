@@ -20,6 +20,14 @@ use App\Models\Config;
 
 use Carbon\Carbon;
 
+/**
+ * Esegue un controllo di una configurazione
+ * Se api esegue una chiamata a status
+ * Se cartella scrive e legge un file sulla cartella
+ * ....
+ */
+
+
 class CheckConfigJob implements ShouldQueue
 {
     use Batchable, Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
@@ -83,10 +91,15 @@ class CheckConfigJob implements ShouldQueue
 
         Log::debug('CheckConfigJob->info:', [$this->jobInfo] );
 
-        $config = Config::findOrFail([
-            'engine' => $this->jobInfo['engine'],
-        ]);
+        // Geo_Postal_us::where('postal', $postal)->firstOrFail();
 
+        $config = Config::where([
+            'type' => $this->jobInfo['type'],
+            'engine' => $this->jobInfo['engine'],
+        ])->findOrFail();
+
+        Log::debug('CheckConfigJob->config:', [$config] );
+    
         $coda = Coda::firstOrCreate([
             'uuid' => $this->job->uuid(),
             'uuid_internal' => $this->uuid,
@@ -98,26 +111,63 @@ class CheckConfigJob implements ShouldQueue
             'service_url' => $this->jobInfo['service_url'],
         ]);
 
+        if ($config['type'] == 'folder') {
+            // write and read file to folder
+            $folder = $config['api'];
+            $fname = $folder . "/" . Str::uuid() . ".txt";
+            Log::debug('CheckConfigJob->CHECK FOLDER:', [$fname] );
+            $content  = 'TO_CHECK!';
+            $content_2_verify = '';
 
-        // $job_id['root_folder'] = $root_folder;
-        // $job_id['service_url'] = $api;
+            try {
+                Storage::put($fname, $content);
+                $content_2_verify = Storage::get($fname);
+            } catch (Exception $e) {
+                Log::debug('CheckConfigJob->CHECK FOLDER ERROR:', [$e->toString()] );
+                $coda->last_run_at = Carbon::now();
+                $coda->status_description = 'WRITE or READ file ERROR!';
+                $coda->status = '900';
+                $coda->save();    
+            }
 
-        Log::debug('CheckConfigJob->service_url:', [$config] );
+            if ( $content == $content_2_verify) {
+                $coda->last_run_at = Carbon::now();
+                $coda->status_description = 'Folder check ok!' . $fname;
+                $coda->status = '200';
+                $coda->save();    
+            } else {
+                $coda->last_run_at = Carbon::now();
+                $coda->status_description = 'WRITE or READ file ERROR : ' . $fname;
+                $coda->status = '900';
+                $coda->save();  
+            }
+ 
+ 
+            // Storage::delete($fname);
 
-        $city = "Rome";
-        $apiKey = 'la-tua-api-key';
+        } elseif ($config['type'] == 'folder') {
 
+            $url = $config['api_status'];
 
-        // $url = "https://dummy.restapiexample.com/api/v1/employee/1";
-        $url = $config['service_url'];
-       
+            Log::debug('CheckConfigJob->CHECK API STATUS:', [$url] );
+
+            $response = Http::withOptions(['verify' => false])->get($url);
+            $coda->last_run_at = Carbon::now();
+            $coda->status = $response->status();
+            $coda->save();
+
+        } else {
+            Log::error('CheckConfigJob->TYPE NOT FOUND!:', [] );    
+
+            $response = Http::withOptions(['verify' => false])->get($url);
+            $coda->last_run_at = Carbon::now();
+            $coda->status_description = 'config type not found';
+            $coda->status = '900';
+            $coda->save();
+        }
+
+        /*
   
-        // Http::withOptions([          'debug' => true,      ]
-        $response = Http::withOptions(['verify' => false])->get($url);
-
-        $statusCode = $response->status();
-
-
         $randNum = rand(1,100);
 
         Log::debug('CheckConfigJob->statuscode:', [$statusCode , $randNum] );
@@ -144,17 +194,9 @@ class CheckConfigJob implements ShouldQueue
             $fileDest = $this->jobInfo['root_folder'] . "/" .  $this->jobInfo['batch_uuid'] . "/" . $this->jobInfo['type'] .   "/out.json";
             Log::info('CheckConfigJob write to :', [$fileDest] );
             Storage::put($fileDest, json_encode($weatherData));
-            
-        /*    
-        // Puoi manipolare o trasformare i dati se necessario
-        return response()->json([
-            'city' => $city,
-            'temperature' => $weatherData['main']['temp'],
-            'description' => $weatherData['weather'][0]['description'],
-        ]);
-        */
 
         }
+        */
             
 
     }

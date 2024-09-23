@@ -13,9 +13,12 @@ use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Http;
+
+
 use App\Models\Coda;
 
 use Carbon\Carbon;
+use Illuminate\Support\Str;
 
 class SpacyJob implements ShouldQueue
 {
@@ -95,16 +98,17 @@ class SpacyJob implements ShouldQueue
 
 
         // $url = "https://dummy.restapiexample.com/api/v1/employee/1";
-        $url = "https://freetestapi.com/api/v1/todos/1";
+        $url = $this->jobInfo['service_url'];
 
 
         Log::debug('NerJob->url:with no verify!', [$url] );
   
         // Http::withOptions([          'debug' => true,      ]
 
+        // CALL URL
         $response = Http::withOptions(['verify' => false])->get($url);
 
-
+        // SAVE RESPONSE to file
 
         $statusCode = $response->status();
 

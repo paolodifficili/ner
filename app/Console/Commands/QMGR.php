@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\Config;
 
 use App\Jobs\NerJob;
 use App\Jobs\SpacyJob;
+use App\Jobs\CheckConfigJob;
 
 /*
 
@@ -84,17 +85,53 @@ class QMGR extends Command
 
         // Setup Soap parameters
 
+
+        $faker = Faker::create('SeedData');
+
         switch ($cmd_par1) {
+
+            case "ORM":
+
+                $config1 = \App\Models\Config::where([
+                    'type' => 'folder',
+                    'engine' => 'root_folder',
+                ])->first();
+
+                Log::channel('stack')->info('QMGR merge:', [$config1]);
+
+                $config = \App\Models\Config::where([
+                    'type' => 'folder',
+                    'engine' => 'root_folder',
+                ])->firstOrFail();
+             
+
+                Log::channel('stack')->info('QMGR merge:', [$config]);
+
+            break;
 
             case "checkConfig":
 
+                $job_id = [];
+                $job_id['description'] = strtoupper($faker->firstName());
+                // $job_id['type'] = $faker->randomElement(['convert','hf','spacy']);
+                $job_id['type'] = 'folder';
+                $job_id['engine'] = 'root_folder';
+                // $job_id['id'] = $faker->numberBetween($min = 1, $max = 2000);
+                // $job_id['id'] = $faker->uuid();
+                $job_id['id'] = 'AAA-BBB-CCCC';
+                $job_id['batch_uuid'] = 'AAA-BBB-CCCC';
+                $job_id['failed'] = '';
+                $job_id['file'] = $faker->randomElement(['a.pdf','b.pdf','c.pdf']);
+ 
+
+                Log::channel('stack')->info('QMGR add Job to queue', [$job_id]);
+                CheckConfigJob::dispatch($job_id);
 
 
 
             break;
 
             case "merge":
-
                 
                 $uuid = "1726138047856";
                 $fname = $uuid . "/out.pdf";
@@ -133,7 +170,6 @@ class QMGR extends Command
                         Log::channel('stack')->info('QMGR append 2:', [$fname]);
                         Storage::append($fname, $contents);
                     }
-
 
                 }
 
