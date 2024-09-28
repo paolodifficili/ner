@@ -21,12 +21,14 @@ Route::options($uri, $callback);
 */
 
 Route::get('/coda/show', [QueueController::class, 'showCoda']);
+
+Route::get('/upload/list', [QueueController::class, 'showUploadFileList']);
+
 Route::get('/config/show', [QueueController::class, 'showConfig']);
 
+Route::get('/batch/{id}', [QueueController::class, 'showBatch']);
 
-Route::get('/batch/{id}', function($id) {
-    return "OK!";
-});
+Route::get('/postcheck', [QueueController::class, 'submitCheckConfig']);
 
 Route::get('/mux', function() {
     Log::channel('stack')->info('mux get:', []);

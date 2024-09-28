@@ -18,6 +18,13 @@ use App\Jobs\NerJob;
 use App\Jobs\SpacyJob;
 use App\Jobs\CheckConfigJob;
 
+
+use Exception;
+use Illuminate\Http\Client\PendingRequest;
+use Illuminate\Http\Client\RequestException;
+use Illuminate\Http\Client\ConnectionException;
+use GuzzleHttp\Exception\ConnectException;
+
 /*
 
 php artisan QMGR add
@@ -90,6 +97,28 @@ class QMGR extends Command
 
         switch ($cmd_par1) {
 
+            case "HTTP":
+                $url = "http://127.0.0.1:8900/test";
+
+                Log::debug(' API STATUS:', [$url] );
+    
+                try {
+                    $response = Http::withOptions(['verify' => false])->get($url);
+                } 
+
+                catch( \Illuminate\Http\Client\ConnectionException $e)
+                {
+                    Log::channel('stack')->error('QMGR ConnectionException:', [$e->getMessage()]);    
+                }
+
+                catch (\Exception $e) {
+                    Log::channel('stack')->error('QMGR Exception:', []);    
+                }
+                
+                
+            break;
+
+
             case "ORM":
 
                 $config1 = \App\Models\Config::where([
@@ -109,25 +138,54 @@ class QMGR extends Command
 
             break;
 
-            case "checkConfig":
+            case "checkConfigJOB":
+
+                $batch_id = 'BATCH' . $faker->numberBetween($min = 1, $max = 2000);
+
+                // crea un job di tipo root_folder
 
                 $job_id = [];
-                $job_id['description'] = strtoupper($faker->firstName());
+                $job_id['description'] = 'CHECKCONFIG';
                 // $job_id['type'] = $faker->randomElement(['convert','hf','spacy']);
                 $job_id['type'] = 'folder';
                 $job_id['engine'] = 'root_folder';
                 // $job_id['id'] = $faker->numberBetween($min = 1, $max = 2000);
                 // $job_id['id'] = $faker->uuid();
-                $job_id['id'] = 'AAA-BBB-CCCC';
-                $job_id['batch_uuid'] = 'AAA-BBB-CCCC';
-                $job_id['failed'] = '';
-                $job_id['file'] = $faker->randomElement(['a.pdf','b.pdf','c.pdf']);
+                $job_id['id'] = 'JOB_AAA-BBB-CCCC';
+                $job_id['batch_uuid'] = $batch_id;
  
+                Log::channel('stack')->info('QMGR add Job to queue', [$job_id]);
+                CheckConfigJob::dispatch($job_id);
 
+                // crea un job di tipo spacy
+
+                $job_id = [];
+               
+                $job_id['description'] = 'CHECKCONFIG';
+                // $job_id['type'] = $faker->randomElement(['convert','hf','spacy']);
+                $job_id['type'] = 'ner';
+                $job_id['engine'] = 'spacy_ner';
+                // $job_id['id'] = $faker->numberBetween($min = 1, $max = 2000);
+                // $job_id['id'] = $faker->uuid();
+                $job_id['id'] = 'JOB_XXX-BBB-CCCC';
+                $job_id['batch_uuid'] = $batch_id;
+ 
                 Log::channel('stack')->info('QMGR add Job to queue', [$job_id]);
                 CheckConfigJob::dispatch($job_id);
 
 
+                $job_id = [];
+                $job_id['description'] = 'CHECKCONFIG';
+                // $job_id['type'] = $faker->randomElement(['convert','hf','spacy']);
+                $job_id['type'] = 'ner';
+                $job_id['engine'] = 'hf01';
+                // $job_id['id'] = $faker->numberBetween($min = 1, $max = 2000);
+                // $job_id['id'] = $faker->uuid();
+                $job_id['id'] = 'JOB_XXX-BBB-CCCC';
+                $job_id['batch_uuid'] = $batch_id;
+ 
+                Log::channel('stack')->info('QMGR add Job to queue', [$job_id]);
+                CheckConfigJob::dispatch($job_id);
 
             break;
 

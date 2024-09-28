@@ -38,11 +38,27 @@
         <input id="picker" type="file" />
 
         <div id="myProgress"><div id="myBar"></div></div>
+        <pre id="log"></pre>
 
         <script>
 
         const picker = document.getElementById('picker');
         const myBar = document.getElementById("myBar");
+
+
+        var old = console.log;
+        var logger = document.getElementById('log');
+        console.log = function () {
+        for (var i = 0; i < arguments.length; i++) {
+            if (typeof arguments[i] == 'object') {
+                logger.innerHTML += (JSON && JSON.stringify ? JSON.stringify(arguments[i], undefined, 2) : arguments[i]) + '<br />';
+            } else {
+                logger.innerHTML += arguments[i] + '<br />';
+            }
+        }
+        }
+
+
 
 
         picker.onchange = () => {
@@ -76,22 +92,32 @@
         // subscribe to events
         upload.on('error', (err) => {
             console.error('💥 🙀', err.detail);
+            console.log(err, true, new Date());
+            
         });
 
         upload.on('progress', (progress) => {
             console.log(`So far we've uploaded ${progress.detail}% of this file.`);
             myBar.style.width = progress.detail + "%";
+            console.log(progress.detail, true, new Date());
         });
 
     
         upload.on('success', () => {
             console.log("Wrap it up, we're done here.");
+            
         });
         };
 
+        console.log('Check!', true, new Date());
+
 </script>
 
+        
+
     </div>
+
+    
 
     </body>
 </html>

@@ -15,6 +15,12 @@ use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Http;
 
+use Exception;
+use Illuminate\Http\Client\PendingRequest;
+use Illuminate\Http\Client\RequestException;
+use Illuminate\Http\Client\ConnectionException;
+use GuzzleHttp\Exception\ConnectException;
+
 use App\Models\Coda;
 use App\Models\Config;
 
@@ -93,23 +99,37 @@ class CheckConfigJob implements ShouldQueue
 
         // Geo_Postal_us::where('postal', $postal)->firstOrFail();
 
+        /*
         $config = Config::where([
             'type' => $this->jobInfo['type'],
             'engine' => $this->jobInfo['engine'],
         ])->findOrFail();
+        */
+
+        Log::debug('CheckConfigJob->SEARCH a config:', [
+            'type' => $this->jobInfo['type'],
+            'engine' => $this->jobInfo['engine'],
+        ]);
+
+        $config = \App\Models\Config::where([
+            'type' => $this->jobInfo['type'],
+            'engine' => $this->jobInfo['engine'],
+        ])->firstOrFail();
 
         Log::debug('CheckConfigJob->config:', [$config] );
     
         $coda = Coda::firstOrCreate([
-            'uuid' => $this->job->uuid(),
+            'job_uuid' => $this->job->uuid(),
             'uuid_internal' => $this->uuid,
             'batch_uuid' => $this->jobInfo['batch_uuid'],
             'description' => $this->jobInfo['description'],
             'type' => $this->jobInfo['type'],
-            'file' => $this->jobInfo['file'],
-            'root_folder' => $this->jobInfo['root_folder'],
-            'service_url' => $this->jobInfo['service_url'],
+            'file' => $this->jobInfo['engine'],
+            'root_folder' => '',
+            'service_url' => '',
         ]);
+
+        Log::debug('CheckConfigJob->config:TYPE:', [$config['type']] );
 
         if ($config['type'] == 'folder') {
             // write and read file to folder
@@ -132,7 +152,7 @@ class CheckConfigJob implements ShouldQueue
 
             if ( $content == $content_2_verify) {
                 $coda->last_run_at = Carbon::now();
-                $coda->status_description = 'Folder check ok!' . $fname;
+                $coda->status_description =  $fname;
                 $coda->status = '200';
                 $coda->save();    
             } else {
@@ -145,21 +165,44 @@ class CheckConfigJob implements ShouldQueue
  
             // Storage::delete($fname);
 
-        } elseif ($config['type'] == 'folder') {
+        } elseif ($config['type'] == 'ner') {
 
             $url = $config['api_status'];
 
             Log::debug('CheckConfigJob->CHECK API STATUS:', [$url] );
 
-            $response = Http::withOptions(['verify' => false])->get($url);
-            $coda->last_run_at = Carbon::now();
-            $coda->status = $response->status();
-            $coda->save();
+
+            try {
+                $response = Http::withOptions(['verify' => false])->get($url);
+                $coda->last_run_at = Carbon::now();
+                $coda->status = $response->status();
+                $coda->status_description = $url;
+                $coda->save();
+            } 
+            catch( \Illuminate\Http\Client\ConnectionException $e)
+            {
+                Log::channel('stack')->error('CheckConfigJob ConnectionException:', [$e->getMessage()]);    
+                $coda->last_run_at = Carbon::now();
+                $coda->status = '999';
+                $coda->status_description = $e->getMessage();
+                $coda->save();
+
+            }
+            catch (\Exception $e) {
+                Log::channel('stack')->error('CheckConfigJob Exception:', []);  
+                $coda->last_run_at = Carbon::now();  
+                $coda->status = '999';
+                $coda->status_description = $e->getMessage();
+                $coda->save();
+            }
+
+            
+            
 
         } else {
             Log::error('CheckConfigJob->TYPE NOT FOUND!:', [] );    
 
-            $response = Http::withOptions(['verify' => false])->get($url);
+            // $response = Http::withOptions(['verify' => false])->get($url);
             $coda->last_run_at = Carbon::now();
             $coda->status_description = 'config type not found';
             $coda->status = '900';

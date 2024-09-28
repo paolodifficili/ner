@@ -13,11 +13,13 @@ class Coda extends Model
     protected $primaryKey = 'id';
 
     protected $fillable = [ 
-        'uuid',
+        'job_uuid',
         'uuid_internal',
         'batch_uuid',
         'file',
+        'info',
         'type',
+        'engine',
         'status',
         'status_description',
         'description',

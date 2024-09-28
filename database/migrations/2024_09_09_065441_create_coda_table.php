@@ -16,11 +16,13 @@ return new class extends Migration
             $table->timestamps();
 
 
-            $table->string('uuid');
+            $table->string('job_uuid')->nullable();
             $table->string('uuid_internal')->nullable();
             $table->string('batch_uuid')->nullable();
             $table->string('file')->nullable();
             $table->string('type')->nullable();
+            $table->string('engine')->nullable();
+            $table->string('info')->nullable();
             $table->string('status')->nullable();
             $table->string('email')->nullable();
             $table->string('description')->nullable();

@@ -8,6 +8,8 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
+use App\Models\Config;
+
 
 class MuxController extends Controller
 {
@@ -68,6 +70,17 @@ class MuxController extends Controller
 
         Log::channel('stack')->info('MuxController:update:', [$fileName, $uuid] );
 
+        $config = Config::where([
+            'type' => 'folder',
+            'engine' => 'upload_folder',
+        ])->first();
+
+        
+        $uploadFolder = $config->api;
+
+
+        Log::channel('stack')->info('MuxController:uploadFolder:', [$uploadFolder] );
+
         $contentLength = $request->header('CONTENT-LENGTH');
         $contentType = $request->header('CONTENT-TYPE');
         $contentRange = $request->header('CONTENT-RANGE');
@@ -85,20 +98,20 @@ class MuxController extends Controller
       
         $bodyContent = $request->getContent();
     
-        $chunkDest = $uuid . "/" .  $startSize;
+        $chunkDest = $uploadFolder . "/" . $uuid . "/" .  $startSize;
         Log::info('MuxController write to :', [$chunkDest] );
         Storage::put($chunkDest, $bodyContent);
    
 
         if ( ($endSize+1) == $totalSize) {
             
-            $fileDest = $uuid . "/" . $fileName;
+            $fileDest = $uploadFolder . "/" . $uuid . "/" . $fileName;
             Log::info('MuxController write merge & clean :', [$fileDest] );
             
-            $chunk_list = Storage::files($uuid);
+            $chunk_list = Storage::files($uploadFolder . "/" . $uuid);
             Log::channel('stack')->info('MuxController chunk list:', [$chunk_list]);
 
-            $stringToRemove = $uuid . "/";
+            $stringToRemove = $uploadFolder . "/" . $uuid . "/";
 
             $onlyFileName = array_map(function($item) use ($stringToRemove) {
                 // Rimuovi la stringa dall'inizio (se presente)
@@ -113,12 +126,12 @@ class MuxController extends Controller
 
             Log::channel('stack')->info('MuxController RBUILD! list:', [$onlyFileName]);
 
-            $fname = $uuid . "/" . $fileName;
+            $fname = $uploadFolder . "/" . $uuid . "/" . $fileName;
 
             foreach($onlyFileName as $item ) {
 
                 // read contents
-                $file2get = $uuid . "/" . $item;
+                $file2get = $uploadFolder . "/" . $uuid . "/" . $item;
                 Log::channel('stack')->info('MuxController read:', [$file2get]);
                 $contents = Storage::get($file2get);
 
@@ -139,9 +152,9 @@ class MuxController extends Controller
             foreach($onlyFileName as $item ) {
 
                 // read contents
-                $file2get = $uuid . "/" . $item;
-                Log::channel('stack')->info('MuxController remove:', [$file2get]);
-                Storage::delete($file2get);
+                $file2delete = $uploadFolder . "/" . $uuid . "/" . $item;
+                Log::channel('stack')->info('MuxController remove:', [$file2delete]);
+                Storage::delete($file2delete);
                 
             }
 

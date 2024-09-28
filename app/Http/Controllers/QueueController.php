@@ -11,6 +11,10 @@ use Illuminate\Support\Facades\Storage;
 use App\Models\Coda;
 use App\Models\Config;
 
+use App\Jobs\CheckConfigJob;
+
+use Faker\Factory as Faker;
+
 class QueueController extends Controller
 {
     // $uploadFolder = './final_destination/'; 
@@ -20,6 +24,55 @@ class QueueController extends Controller
     /**
      * Display a listing of the resource.
      */
+
+    public function submitCheckConfig()
+    {
+        Log::channel('stack')->info('QueueController:submitCheckConfig:', [] );
+        $faker = Faker::create('SeedData');
+        $batch_id = 'BATCH' . $faker->numberBetween($min = 1, $max = 2000);
+
+        // recupera tutte le configurazioni e per ognuna esegue il test
+
+        $coda = Config::all();
+        foreach ($coda as $c) {
+            $job_id = [];
+            $job_id['description'] = 'CHECKCONFIG';
+            $job_id['type'] = $c->type;
+            $job_id['engine'] = $c->engine;
+            $job_id['batch_uuid'] = $batch_id;
+
+            Log::channel('stack')->info('QueueController:submitCheckConfig', [$job_id]);
+            CheckConfigJob::dispatch($job_id);
+        }
+
+        return response()->json([
+            "status" => 200,
+            "batch_uuid" => $batch_id,
+        ]);
+
+    }
+
+    public function showUploadFileList()
+    {
+        
+        
+
+        $config = Config::where([
+            'type' => 'folder',
+            'engine' => 'upload_folder',
+        ])->first();
+        
+        $uploadFolder = $config->api;
+
+        Log::channel('stack')->info('showUploadFileList:index:', [$uploadFolder] );
+
+        $file_list = Storage::allFiles($uploadFolder);
+        Log::channel('stack')->info('showUploadFileList chunk list:', [$file_list]);
+        return response()->json($file_list);
+        // return $codaJson;
+        
+    }
+
 
     public function showCoda()
     {
@@ -31,6 +84,21 @@ class QueueController extends Controller
         // return $codaJson;
         
     }
+
+    public function showBatch(String $batchId)
+    {
+        Log::channel('stack')->info('QueueController:showBatch:', [$batchId] );
+      
+        $coda = Coda::where([
+            'batch_uuid' => $batchId,
+        ])->get();
+        // $codaJson = json_encode($coda);
+
+        return response()->json($coda);
+        // return $codaJson;
+        
+    }
+
 
     public function showConfig()
     {
@@ -102,6 +170,16 @@ class QueueController extends Controller
         $uuid = $request->header('X-UP-UUID');
 
         Log::channel('stack')->info('MuxController:update:', [$fileName, $uuid] );
+
+
+        $config = Config::firstOrFail([
+            'type' => 'folder',
+            'engine' => 'upload_folder',
+        ]);
+
+        $uploadFolder = $config->api;
+
+        Log::channel('stack')->info('MuxController:update:', [$uploadFolder] );
 
         $contentLength = $request->header('CONTENT-LENGTH');
         $contentType = $request->header('CONTENT-TYPE');
@@ -197,9 +275,6 @@ class QueueController extends Controller
             ]);
         }
         
-        
-        
-
        
 
         // $headers = request::header();

@@ -1,6 +1,11 @@
 
 php artisan migrate
 
+# API Route
+php artisan route:clear
+php artisan route:list
+
+
 # QUEUE
 php artisan make:queue-table
 php artisan migrate
@@ -43,6 +48,12 @@ D:\PROGETTI\LARAVEL>ner_app\php artisan queue:work
 
 CMD
 D:\PROGETTI\LARAVEL>ner_app\php artisan queue:work
+
+
+# Post di un batch
+- Upload del file con creazione del batch Id
+- Avvio del batch con la lavorazione
+-
 
 
 # https://github.com/paolodifficili/ner.git
