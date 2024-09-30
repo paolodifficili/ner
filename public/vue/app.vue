@@ -8,10 +8,10 @@
 <RouterLink to="/upload"><v-btn>Upload</v-btn></RouterLink>
 <RouterLink to="/lista"><v-btn>List</v-btn></RouterLink>
 <RouterLink to="/table"><v-btn>Table</v-btn></RouterLink>
-<RouterLink to="/crud"><v-btn>Crud</v-btn></RouterLink>
-<RouterLink to="/crud2"><v-btn>Crud2</v-btn></RouterLink>
+<RouterLink to="/batch"><v-btn>Batch</v-btn></RouterLink>
+<RouterLink to="/batchnew"><v-btn>Batch new</v-btn></RouterLink>
 
-<RouterLink to="/crud">
+<RouterLink to="/crud2">
 <v-icon>mdi-heart</v-icon>
 </RouterLink>
 

@@ -9,11 +9,17 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
 use App\Models\Coda;
+use App\Models\CodaBatch;
 use App\Models\Config;
+
+use Illuminate\Support\Facades\Validator;
+
+use App\Http\Requests\StoreBatchRequest;
 
 use App\Jobs\CheckConfigJob;
 
 use Faker\Factory as Faker;
+use Carbon\Carbon;
 
 class QueueController extends Controller
 {
@@ -54,9 +60,6 @@ class QueueController extends Controller
 
     public function showUploadFileList()
     {
-        
-        
-
         $config = Config::where([
             'type' => 'folder',
             'engine' => 'upload_folder',
@@ -85,18 +88,217 @@ class QueueController extends Controller
         
     }
 
-    public function showBatch(String $batchId)
+    public function showBatchAction()
     {
-        Log::channel('stack')->info('QueueController:showBatch:', [$batchId] );
-      
-        $coda = Coda::where([
-            'batch_uuid' => $batchId,
-        ])->get();
-        // $codaJson = json_encode($coda);
+        Log::channel('stack')->info('QueueController:showBatchActions:', [] );
+        $coda = [
+            [
+                "id" => 0,
+                "action" => "CHECK_CONFIG",
+            ],
+
+            [
+                "id" => 1,
+                "action" => "RUN_ENGINE",
+            ],
+        ];
+        $codaJson = json_encode($coda);
 
         return response()->json($coda);
         // return $codaJson;
         
+    }
+
+    /**
+     * 
+     *  ********* BATCH **********************
+     * 
+     */
+
+    // mostra le info di un batch o la lista dei batch
+
+    public function showBatch(String $batchId = null)
+    {
+        Log::channel('stack')->info('QueueController:showBatch:', [$batchId] );
+     
+        if($batchId) {
+            $batch = CodaBatch::where(['batch_uuid' => $batchId])->get();
+            $jobs = Coda::where(['batch_uuid' => $batchId])->get();
+
+            $out = [
+                'batch_info' => $batch,
+                'batch_jobs' => $jobs,
+            ];
+    
+        } else {
+            $batch = CodaBatch::all();
+            $jobs = [];
+
+            $out = $batch;
+        }
+
+    
+
+        
+        
+        // $codaJson = json_encode($coda);
+
+        Log::channel('stack')->info('QueueController:showBatch:', [$jobs, $batch] );
+
+      
+        return response()->json($out);
+
+        // return $codaJson;
+    }
+
+
+    public function storeBatch(StoreBatchRequest $request)
+    {
+      
+        $details =[
+            'batch_uuid' => $request->batch_uuid,
+            'batch_description' => $request->batch_description,
+            'batch_action' => $request->batch_action,
+            'batch_options' => $request->batch_options,
+        ];
+
+        Log::channel('stack')->info('QueueController:storeBatch:', [$details] );
+
+        $cb = CodaBatch::create($request->validated());
+
+        Log::channel('stack')->info('QueueController:storeBatch:', [$cb] );
+        
+        $resp = [
+            'success' => true,
+            'data'    => $cb
+        ];        
+
+        return response()->json($resp);
+        // return $codaJson;
+    }
+
+/*
+
+        **************** MGR **********************
+
+
+*/
+
+
+    public function mgrBatch(Request $request)
+    {
+      
+        Log::channel('stack')->info('QueueController:mgrBatch:', [$request->all() , $request->has('QMGR_ACTION')] );
+
+        $status = 200;
+        $status_action = 'NO ACTION';
+        $data = [];
+
+        if ($request->has('QMGR_ACTION')) {
+
+            $QMGR_ACTION = $request->input('QMGR_ACTION');
+
+            switch ($QMGR_ACTION) {
+
+                case 'TEST_ACTION':
+                    
+                    Log::channel('stack')->info('QueueController:mgrBatch:', [$QMGR_ACTION] );
+                    $status_action = 'Batch TEST_ACTION submitted';
+                
+                break;
+                
+
+                case 'CHECK_CONFIG':
+
+                    /* build a batch to check configuration */
+
+                    $faker = Faker::create('SeedData');
+
+                    $batch_id = 'BATCH' . $faker->numberBetween($min = 1, $max = 2000);
+                    $batch_uuid = $batch_id;
+                    $batch_description = $batch_id;
+                    $batch_options = ['start_at' => Carbon::now()];
+
+                    $data =[
+                        'batch_uuid' => $batch_id,
+                        'batch_description' => $batch_id,
+                        'batch_options' => json_encode($batch_options),
+                    ];
+            
+                    Log::channel('stack')->info('QueueController:storeBatch:', [$data] );
+            
+                    $cb = CodaBatch::create($data);
+                
+                    
+                    // recupera tutte le configurazioni e per ognuna esegue il test
+            
+                    $job_list = [];
+
+                    $coda = Config::all();
+
+                    foreach ($coda as $c) {
+
+                        $job_id = [];
+                        $job_id['description'] = 'CHECKCONFIG';
+                        $job_id['type'] = $c->type;
+                        $job_id['engine'] = $c->engine;
+                        $job_id['batch_uuid'] = $batch_id;
+            
+                        Log::channel('stack')->info('QueueController:mgrBatch', [$job_id]);
+                        CheckConfigJob::dispatch($job_id);
+
+                        $job_list = $job_id;
+                    }
+            
+                    $data = [
+                        "batch_uuid" => $batch_id,
+                        "job_list" => $job_list
+                    ];
+
+                    $status_action = 'Batch submitted';
+                break;
+                
+                default:
+                    Log::channel('stack')->error('QueueController:mgrBatch', ['ERROR!']);
+                    $status = 501;
+                    $status_action = 'NO QMGR_ACTION FOUND!';
+                break;
+            }
+
+
+
+            /*
+            $input = [
+                'user' => [
+                    'name' => 'Taylor Otwell',
+                    'username' => 'taylorotwell',
+                    'admin' => true,
+                ],
+            ];
+            Validator::make($input, [
+                'user' => 'array:name,username',
+            ]);
+            */
+
+
+            $out = [
+                'action' => $QMGR_ACTION,
+                'status' => $status_action
+            ];
+
+
+            $out = array_merge($out, $data);
+            
+        } else {
+            Log::channel('stack')->error('QueueController:mgrBatch:', ['NO_ACTION'] );
+            $out = ['message' => 'QMGR_ACTION not found'];
+            $status = 501;
+        }
+
+
+        return response()->json($out, $status);
+        
+        // return $codaJson;
     }
 
 
@@ -108,7 +310,6 @@ class QueueController extends Controller
 
         return response()->json($coda);
         // return $codaJson;
-        
     }
 
     public function CheckConfig()

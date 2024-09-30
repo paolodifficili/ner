@@ -23,12 +23,17 @@ Route::options($uri, $callback);
 Route::get('/coda/show', [QueueController::class, 'showCoda']);
 
 Route::get('/upload/list', [QueueController::class, 'showUploadFileList']);
+Route::get('/config/list', [QueueController::class, 'showConfig']);
+Route::get('/action/list', [QueueController::class, 'showBatchAction']);
 
-Route::get('/config/show', [QueueController::class, 'showConfig']);
+Route::get('/batch/{id?}', [QueueController::class, 'showBatch']);
 
-Route::get('/batch/{id}', [QueueController::class, 'showBatch']);
+Route::put('/batch/{id}', [QueueController::class, 'changeBatch']);
 
-Route::get('/postcheck', [QueueController::class, 'submitCheckConfig']);
+Route::post('/batch', [QueueController::class, 'storeBatch']);
+
+Route::post('/qmgr', [QueueController::class, 'mgrBatch']);
+
 
 Route::get('/mux', function() {
     Log::channel('stack')->info('mux get:', []);

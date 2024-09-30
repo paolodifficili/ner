@@ -18,6 +18,7 @@ use App\Jobs\NerJob;
 use App\Jobs\SpacyJob;
 use App\Jobs\CheckConfigJob;
 
+use App\Models\CodaBatch;
 
 use Exception;
 use Illuminate\Http\Client\PendingRequest;
@@ -96,6 +97,42 @@ class QMGR extends Command
         $faker = Faker::create('SeedData');
 
         switch ($cmd_par1) {
+
+
+            case "JSON":
+                Log::debug('Save json and retrieve:', [] );
+
+                $batch_id = 'BATCH' . $faker->numberBetween($min = 1, $max = 2000);
+                $batch_id = 'BATCH1774';
+
+                $data = [
+                    "name" => $batch_id,
+                    "title" => "Mr.",
+                    "age" => 33,
+                    "City" => "Naples"
+                ];
+
+                $data_json = json_encode($data);
+
+                
+                $codab = CodaBatch::firstOrNew([
+                    'batch_uuid' => $batch_id,
+                    'batch_description' => $batch_id,
+                ]);
+
+                Log::channel('stack')->info('codabatch JSON:', [$codab]);    
+                Log::channel('stack')->info('codabatch JSON:', [$data_json]);    
+
+                $codab->info = 'INFO';
+
+                $codab->batch_options = $data_json;
+
+                $codab->save();
+
+                Log::channel('stack')->info('codabatch JSON:', [$codab]);    
+
+
+            break;
 
             case "HTTP":
                 $url = "http://127.0.0.1:8900/test";

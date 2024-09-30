@@ -8,7 +8,7 @@
     },
     methods: {
       async getData() {
-        const res = await fetch("https://jsonplaceholder.typicode.com/posts");
+        const res = await fetch("/api/config/list");
         const finalRes = await res.json();
         this.listItems = finalRes;
       },

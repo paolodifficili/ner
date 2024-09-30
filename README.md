@@ -52,7 +52,9 @@ D:\PROGETTI\LARAVEL>ner_app\php artisan queue:work
 
 # Post di un batch
 - Upload del file con creazione del batch Id
-- Avvio del batch con la lavorazione
+- Creazione del batch : selezione file + selezione motori di analisi
+- Visualizzazione stato di elaborazione di un batch 
+- Esecuzione dei valori
 -
 
 
@@ -63,3 +65,8 @@ D:\PROGETTI\LARAVEL>ner_app\php artisan queue:work
 git add .
 git commit -m "%DATE%-%TIME%"
 git push -u -f origin master
+
+# Laravel Migration
+php artisan make:migration create_TABLENAME_table
+-- edit file
+php artisan migrate
