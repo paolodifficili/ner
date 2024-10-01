@@ -14,7 +14,7 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Http;
-use App\Models\Coda;
+use App\Models\CodaJob;
 
 use Carbon\Carbon;
 
@@ -88,7 +88,7 @@ class NerJob implements ShouldQueue
 
         Log::debug('NerJob->info:', [$this->jobInfo] );
 
-        $coda = Coda::firstOrCreate([
+        $coda = CodaJob::firstOrCreate([
             'uuid' => $this->job->uuid(),
             'uuid_internal' => $this->uuid,
             'batch_uuid' => $this->jobInfo['batch_uuid'],

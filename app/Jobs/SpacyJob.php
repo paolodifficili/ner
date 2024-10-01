@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Http;
 
 
-use App\Models\Coda;
+use App\Models\CodaJob;
 
 use Carbon\Carbon;
 use Illuminate\Support\Str;
@@ -83,7 +83,7 @@ class SpacyJob implements ShouldQueue
 
         Log::debug('NerJob->info:', [$this->jobInfo] );
 
-        $coda = Coda::firstOrCreate([
+        $coda = CodaJob::firstOrCreate([
             'uuid' => $this->job->uuid(),
             'uuid_internal' => $this->uuid,
             'description' => $this->jobInfo['description'],

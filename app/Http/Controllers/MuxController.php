@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Storage;
 
 use App\Models\Config;
 
+use App\Models\CodaFile;
 
 class MuxController extends Controller
 {
@@ -147,7 +148,22 @@ class MuxController extends Controller
 
             Log::channel('stack')->info('MuxController RBUILDED!:', [$fname]);
 
+
+            // Update file list
+
+            $info = [
+                'file_uuid' => $uuid,
+                'file_name' => $fname,
+                'file_size' => '',
+                'file_path' => '',
+                'file_extension' => '',
+                'file_root_path' => $uploadFolder
+            ];
+
+            $cf = CodaFile::create($info);
         
+
+            // delete Chunk ....
             
             foreach($onlyFileName as $item ) {
 
@@ -162,6 +178,7 @@ class MuxController extends Controller
             
             return response()->json([
                 'action' => 'upload',
+                'info' => $cf,
                 'status' => 'ok',
             ]);
             
@@ -174,10 +191,7 @@ class MuxController extends Controller
                 'status' => 'ok',
             ]);
         }
-        
-        
-        
-
+             
        
 
         // $headers = request::header();

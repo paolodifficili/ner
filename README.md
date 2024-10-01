@@ -13,9 +13,9 @@ php artisan migrate
 
 # Struttura del lavoro su file system
 
- - Upload - OK!
- - Conversione / Batch / Motori
- - Generazione Output risultato
+- Upload - OK!
+- Conversione / Batch / Motori
+- Generazione Output risultato
 
 
 - /UUID/Source si trovano il pdf e la conversione in testo
@@ -52,8 +52,17 @@ D:\PROGETTI\LARAVEL>ner_app\php artisan queue:work
 
 # Post di un batch
 - Upload del file con creazione del batch Id
-- Creazione del batch : selezione file + selezione motori di analisi
+- Creazione del batch : 
+      . selezione file + 
+      . selezione dell'azione
+      . selezione motori di analisi
+      . salvataggio
+
 - Visualizzazione stato di elaborazione di un batch 
+    . avvio elaborazione
+    . visualizzazione dei risultati
+    . cancellazione dei dati
+ 
 - Esecuzione dei valori
 -
 

@@ -32,8 +32,10 @@ Route::put('/batch/{id}', [QueueController::class, 'changeBatch']);
 
 Route::post('/batch', [QueueController::class, 'storeBatch']);
 
+// action manager batch
 Route::post('/qmgr', [QueueController::class, 'mgrBatch']);
 
+// MUX Routes for upload 
 
 Route::get('/mux', function() {
     Log::channel('stack')->info('mux get:', []);
@@ -58,7 +60,6 @@ Route::options('/head', function() {
 	header("Access-Control-Allow-Headers: *");
 	http_response_code(200);
 });
-
 
 Route::put('/mux', [MuxController::class, 'update']);
 

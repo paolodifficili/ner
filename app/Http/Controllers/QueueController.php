@@ -8,8 +8,9 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
-use App\Models\Coda;
+use App\Models\CodaJob;
 use App\Models\CodaBatch;
+use App\Models\CodaFile;
 use App\Models\Config;
 
 use Illuminate\Support\Facades\Validator;
@@ -60,6 +61,16 @@ class QueueController extends Controller
 
     public function showUploadFileList()
     {
+        Log::channel('stack')->info('QueueController:showUploadFileList:', [] );
+        $coda = CodaFile::all();
+        // $codaJson = json_encode($coda);
+        return response()->json($coda);
+    }
+
+
+    // list file from folder
+    public function showUploadFileList_OLD()
+    {
         $config = Config::where([
             'type' => 'folder',
             'engine' => 'upload_folder',
@@ -73,14 +84,13 @@ class QueueController extends Controller
         Log::channel('stack')->info('showUploadFileList chunk list:', [$file_list]);
         return response()->json($file_list);
         // return $codaJson;
-        
     }
 
 
     public function showCoda()
     {
         Log::channel('stack')->info('QueueController:index:', [] );
-        $coda = Coda::all();
+        $coda = CodaJob::all();
         $codaJson = json_encode($coda);
 
         return response()->json($coda);
@@ -94,12 +104,12 @@ class QueueController extends Controller
         $coda = [
             [
                 "id" => 0,
-                "action" => "CHECK_CONFIG",
+                "value" => "CHECK_CONFIG",
             ],
 
             [
                 "id" => 1,
-                "action" => "RUN_ENGINE",
+                "value" => "RUN_ENGINE",
             ],
         ];
         $codaJson = json_encode($coda);
@@ -123,7 +133,7 @@ class QueueController extends Controller
      
         if($batchId) {
             $batch = CodaBatch::where(['batch_uuid' => $batchId])->get();
-            $jobs = Coda::where(['batch_uuid' => $batchId])->get();
+            $jobs = CodaJob::where(['batch_uuid' => $batchId])->get();
 
             $out = [
                 'batch_info' => $batch,
@@ -181,6 +191,11 @@ class QueueController extends Controller
 
         **************** MGR **********************
 
+        // Exec batch actions
+        // Submit Jobs
+        // Reset 
+        // Delete
+
 
 */
 
@@ -190,80 +205,83 @@ class QueueController extends Controller
       
         Log::channel('stack')->info('QueueController:mgrBatch:', [$request->all() , $request->has('QMGR_ACTION')] );
 
+
+        $validatedData = $request->validate([
+            'QMGR_ACTION' => ['required'],
+            'BATCH_UUID' => ['required'],
+        ]);
+
+
+        Log::channel('stack')->info('QueueController:mgrBatch:', [$validatedData] );
+
         $status = 200;
         $status_action = 'NO ACTION';
         $data = [];
+        $out = [];
 
-        if ($request->has('QMGR_ACTION')) {
+        $QMGR_ACTION = $request->input('QMGR_ACTION');
+        $batch_uuid = $request->input('BATCH_UUID');
 
-            $QMGR_ACTION = $request->input('QMGR_ACTION');
+        Log::channel('stack')->info('QueueController:mgrBatch:', [$batch_uuid] );
 
-            switch ($QMGR_ACTION) {
+        $batch = CodaBatch::where(['batch_uuid' => $batch_uuid])->firstOrFail();
+        
 
-                case 'TEST_ACTION':
-                    
-                    Log::channel('stack')->info('QueueController:mgrBatch:', [$QMGR_ACTION] );
-                    $status_action = 'Batch TEST_ACTION submitted';
+        // get batch info .....
+
+
+        switch ($QMGR_ACTION) {
+
+            case 'TEST_ACTION':
                 
-                break;
+                Log::channel('stack')->info('QueueController:mgrBatch:', [$QMGR_ACTION] );
+                $status_action = 'Batch TEST_ACTION submitted';
+            
+            break;
+            
+
+            case 'CHECK_CONFIG':
+
+                /* build a batch to check configuration */
+
+                $batch->last_run_at = Carbon::now();
+                $batch->save();
+                                
                 
+                // recupera tutte le configurazioni e per ognuna esegue il test
+        
+                $job_list = [];
 
-                case 'CHECK_CONFIG':
+                $coda = Config::all();
 
-                    /* build a batch to check configuration */
+                foreach ($coda as $c) {
 
-                    $faker = Faker::create('SeedData');
+                    $job_id = [];
+                    $job_id['description'] = 'CHECKCONFIG';
+                    $job_id['type'] = $c->type;
+                    $job_id['engine'] = $c->engine;
+                    $job_id['batch_uuid'] = $batch_uuid;
+        
+                    Log::channel('stack')->info('QueueController:mgrBatch', [$job_id]);
+                    CheckConfigJob::dispatch($job_id);
 
-                    $batch_id = 'BATCH' . $faker->numberBetween($min = 1, $max = 2000);
-                    $batch_uuid = $batch_id;
-                    $batch_description = $batch_id;
-                    $batch_options = ['start_at' => Carbon::now()];
+                    $job_list = $job_id;
+                }
+        
+                $data = [
+                    "batch_uuid" => $batch_uuid,
+                    "job_list" => $job_list
+                ];
 
-                    $data =[
-                        'batch_uuid' => $batch_id,
-                        'batch_description' => $batch_id,
-                        'batch_options' => json_encode($batch_options),
-                    ];
+                $status_action = 'Batch submitted';
+            break;
             
-                    Log::channel('stack')->info('QueueController:storeBatch:', [$data] );
-            
-                    $cb = CodaBatch::create($data);
-                
-                    
-                    // recupera tutte le configurazioni e per ognuna esegue il test
-            
-                    $job_list = [];
-
-                    $coda = Config::all();
-
-                    foreach ($coda as $c) {
-
-                        $job_id = [];
-                        $job_id['description'] = 'CHECKCONFIG';
-                        $job_id['type'] = $c->type;
-                        $job_id['engine'] = $c->engine;
-                        $job_id['batch_uuid'] = $batch_id;
-            
-                        Log::channel('stack')->info('QueueController:mgrBatch', [$job_id]);
-                        CheckConfigJob::dispatch($job_id);
-
-                        $job_list = $job_id;
-                    }
-            
-                    $data = [
-                        "batch_uuid" => $batch_id,
-                        "job_list" => $job_list
-                    ];
-
-                    $status_action = 'Batch submitted';
-                break;
-                
-                default:
-                    Log::channel('stack')->error('QueueController:mgrBatch', ['ERROR!']);
-                    $status = 501;
-                    $status_action = 'NO QMGR_ACTION FOUND!';
-                break;
-            }
+            default:
+                Log::channel('stack')->error('QueueController:mgrBatch', ['ERROR!']);
+                $status = 501;
+                $status_action = 'NO QMGR_ACTION FOUND!';
+            break;
+        }
 
 
 
@@ -280,7 +298,7 @@ class QueueController extends Controller
             ]);
             */
 
-
+/*
             $out = [
                 'action' => $QMGR_ACTION,
                 'status' => $status_action
@@ -294,7 +312,7 @@ class QueueController extends Controller
             $out = ['message' => 'QMGR_ACTION not found'];
             $status = 501;
         }
-
+*/
 
         return response()->json($out, $status);
         
@@ -328,37 +346,8 @@ class QueueController extends Controller
         return "MUX INDEX";
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        Log::channel('stack')->info('QueueController:create:', [] );
-    }
 
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(StoreProductRequest $request)
-    {
-        Log::channel('stack')->info('QueueController:store:', [] );
-    }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show($id)
-    {
-        Log::channel('stack')->info('QueueController:show:', [] );
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(Product $product)
-    {
-        //
-    }
 
     /**
      * Update the specified resource in storage.
@@ -481,13 +470,7 @@ class QueueController extends Controller
         // $headers = request::header();
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy($id)
-    {
-        Log::channel('stack')->info('MuxController:destroy:', [] );
-    }
+  
 
 
     public function mergeChunks( $uuid, $pathChunk, $pathDest, $fileNameDest )

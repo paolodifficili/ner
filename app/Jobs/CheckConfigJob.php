@@ -21,7 +21,7 @@ use Illuminate\Http\Client\RequestException;
 use Illuminate\Http\Client\ConnectionException;
 use GuzzleHttp\Exception\ConnectException;
 
-use App\Models\Coda;
+use App\Models\CodaJob;
 use App\Models\Config;
 
 use Carbon\Carbon;
@@ -118,7 +118,7 @@ class CheckConfigJob implements ShouldQueue
 
         Log::debug('CheckConfigJob->config:', [$config] );
     
-        $coda = Coda::firstOrCreate([
+        $coda = CodaJob::firstOrCreate([
             'job_uuid' => $this->job->uuid(),
             'uuid_internal' => $this->uuid,
             'batch_uuid' => $this->jobInfo['batch_uuid'],

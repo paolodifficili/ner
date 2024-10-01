@@ -40,24 +40,31 @@
       handleSubmit() {
             // POST request using fetch with error handling
 
-        console.log(this.file_list);
-        console.log(this.config_list);
-        console.log(this.action_list);
+        console.log(this.files_selected);
+        console.log(this.engines_selected);
+        console.log(this.action_selected);
+
+        const ops = {
+          action_selected : this.action_selected,
+          engines_selected : this.engines_selected,
+          files_selected : this.files_selected,
+        };
 
         const obj = {
             batch_uuid:  this.batch_id,
-                    batch_description : this.batch_id,
-                    batch_action' => 'CHECK_CONFIG',
-                    batch_options' => '{}'
-        }
+            batch_description : this.batch_id,
+            batch_action: 'CHECK_CONFIG',
+            batch_options: JSON.stringify(ops)
+        };
 
         console.log(obj);
 
             const requestOptions = {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(obj);
+                body: JSON.stringify(obj)
             };
+
             fetch('/api/batch', requestOptions)
                 .then(async response => {
                 const data = await response.json();
@@ -111,9 +118,9 @@
 <v-select
 v-model="action_selected"
 :items="action_list"
-item-title="action"
+item-title="value"
 item-subtitle="action"
-item-value="action"
+item-value="id"
 label="Select action"
 
 ></v-select>
@@ -124,7 +131,7 @@ v-model="engines_selected"
 :items="config_list"
 item-title="engine"
 item-subtitle="type"
-item-value="engine"
+item-value="id"
 label="Select Engine"
 multiple
 ></v-select>
@@ -133,9 +140,10 @@ multiple
 v-model="files_selected"
 :items="file_list"
 label="Select File"
+item-title="file_name"
+item-value="id"
 multiple
 persistent-hint
-return-object
 ></v-select>
 
    <v-btn @click="handleSubmit"> Invia </v-btn>

@@ -43,7 +43,7 @@ class BatchApiTest extends TestCase
 */
     
 
-    public function test_api_create_batch_by_post(): void
+    public function test_api_create_batch_by_post(): string
     {
         $this->faker = Faker::create('PostCommentTest');
         $batch_id = 'BATCH' . $this->faker->numberBetween($min = 1, $max = 2000);
@@ -53,35 +53,38 @@ class BatchApiTest extends TestCase
             'batch_uuid' => $batch_id,
             'batch_description' => $batch_id,
             'batch_action' => 'CHECK_CONFIG',
-            'batch_options' => '{}'
+            'batch_options' => '{"action_selected":0,"engines_selected":[1,44],"files_selected":[]}'
         ]);
 
         $data_decoded = json_encode($response);
 
         $response->assertStatus(200);
+
+        return $batch_id;
            
     }
     
-/*
-    
-    public function test_api_qmgr_by_post_check_config(): void    
+    /**
+     * @depends test_api_create_batch_by_post
+    */
+    public function test_api_qmgr_by_post_check_config(string $batch_id): void    
     {
 
-        $this->faker = Faker::create('PostCommentTest');
-        $batch_id = 'BATCH' . $this->faker->numberBetween($min = 1, $max = 2000);
+        // $this->faker = Faker::create('PostCommentTest');
+        // $batch_id = 'BATCH' . $this->faker->numberBetween($min = 1, $max = 2000);
 
         $response = $this->postJson('/api/qmgr', [
             'QMGR_ACTION' => 'CHECK_CONFIG',
-            'batch_uuid' => $batch_id,
+            'BATCH_UUID' => $batch_id,
         ]);
 
-        dd($response->json());
+        // dd($response->json());
 
         $response->assertStatus(200);
 
     }
-    
-
+   
+ /* 
     public function test_api_qmgr_by_post_error_501(): void    
     {
 

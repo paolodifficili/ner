@@ -1,34 +1,9 @@
-<!-- js/vue-components/vue-footer.vue -->
-
-<template>
-
-
-<p>Upload.</p>
-
-
-
-<v-file-input clearable id="picker" label="File input" v-model="files"></v-file-input>
-
-<v-btn  color="primary" elevation="8" size="large" @click="goToProfile">Upload</v-btn>
-
-
-
-
-<v-progress-linear
-color="light-blue"
-height="10"
-model-value="10"
-striped
-></v-progress-linear>
-
-<p>https://github.com/muxinc/upchunk</p>
-
-</template>
-
 <script>
   export default {
     data() {
       return {
+        dialog: false,
+        power: 10,
         files: [],
         listItems: []
       }
@@ -40,15 +15,47 @@ striped
         this.listItems = finalRes;
       },
 
-      goToProfile() {
+      uploadBar() {
+        console.log(this.power);
+        this.power = this.power + 10;
+      },
 
-        console.log(this.files);
+      uploadFile() {
+
+        console.log('uploadFile');
+        console.log(this.files.name);
+
+        const ea = {
+            'X-UP-FILENAME': this.files.name,
+            'X-UP-UUID': Date.now(),
+        };
+
 
         const upload = UpChunk.createUpload({
-          method : 'GET',
-          endpoint: 'https://www.ruggeri.info/mypd/flow-upload.php',
+          method : 'PUT',
+          endpoint: '/api/mux',
+          headers : ea,
           file: this.files,
-          chunkSize: 30720, // Uploads the file in ~30 MB chunks
+          chunkSize: 2048, // Uploads the file in ~30 MB chunks
+        });
+
+        upload.on('error', (err) => {
+            console.error('💥 🙀', err.detail);
+            console.log(err, true, new Date());
+        });
+
+        upload.on('progress', (progress) => {
+            console.log(`So far we've uploaded ${progress.detail}% of this file.`);
+            // myBar.style.width = progress.detail + "%";
+            this.power = Math.floor(progress.detail);
+
+            console.log(this.power);
+        });
+    
+        upload.on('success', (msg) => {
+            console.log(msg);
+            console.log("Upload success!");
+            this.dialog = true;
         });
         
       },
@@ -58,3 +65,42 @@ striped
     }
   }
 </script>
+
+<template>
+
+<v-toolbar  color="blue-grey"  dark  flat>
+<v-toolbar-title>Upload file (chunk)</v-toolbar-title>
+</v-toolbar>
+
+<v-file-input clearable id="picker" label="File input" v-model="files"></v-file-input>
+<v-btn  color="primary" elevation="8" size="large" @click="uploadFile">Upload</v-btn>
+
+<v-progress-linear 
+color="blue-grey" height="20" v-model="power">
+<strong>{{ Math.ceil(power) }}%</strong>
+</v-progress-linear>
+<v-list :items="listItems"></v-list>
+<p>https://github.com/muxinc/upchunk</p>
+
+
+ <v-dialog
+      v-model="dialog"
+      width="auto"
+    >
+      <v-card
+        max-width="400"
+        prepend-icon="mdi-update"
+        text="Upload complete."
+        title="Upload complete."
+      >
+        <template v-slot:actions>
+          <v-btn
+            class="ms-auto"
+            text="Ok"
+            @click="dialog = false"
+          ></v-btn>
+        </template>
+      </v-card>
+    </v-dialog>
+
+</template>
