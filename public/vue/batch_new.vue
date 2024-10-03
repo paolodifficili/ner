@@ -4,12 +4,15 @@
       return {
         overlay: false,
         batch_id : '',
+        
         file_list: [],
         config_list: [],
         action_list: [],
+
         engines_selected: [],
         files_selected: [],
         action_selected: [],
+
         batch_item: {}
       }
     },
@@ -122,9 +125,7 @@ item-title="value"
 item-subtitle="action"
 item-value="id"
 label="Select action"
-
 ></v-select>
-
 
 <v-select
 v-model="engines_selected"
@@ -146,7 +147,7 @@ multiple
 persistent-hint
 ></v-select>
 
-   <v-btn @click="handleSubmit"> Invia </v-btn>
+<v-btn @click="handleSubmit"> Invia </v-btn>
 
 <v-overlay
 :model-value="overlay"

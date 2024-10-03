@@ -27,8 +27,10 @@ return new class extends Migration
             $table->string('email')->nullable();
             $table->string('description')->nullable();
             $table->string('root_folder')->nullable();
-            $table->string('service_url')->nullable();
+            $table->string('api_url')->nullable();
+            $table->string('status_url')->nullable();
             $table->string('status_description')->nullable();
+            $table->string('options')->nullable();
 
             $table->timestamp('last_run_at')->nullable();
             

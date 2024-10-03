@@ -205,13 +205,11 @@ class QueueController extends Controller
       
         Log::channel('stack')->info('QueueController:mgrBatch:', [$request->all() , $request->has('QMGR_ACTION')] );
 
-
         $validatedData = $request->validate([
-            'QMGR_ACTION' => ['required'],
             'BATCH_UUID' => ['required'],
         ]);
 
-
+        
         Log::channel('stack')->info('QueueController:mgrBatch:', [$validatedData] );
 
         $status = 200;
@@ -219,22 +217,35 @@ class QueueController extends Controller
         $data = [];
         $out = [];
 
-        $QMGR_ACTION = $request->input('QMGR_ACTION');
         $batch_uuid = $request->input('BATCH_UUID');
-
         Log::channel('stack')->info('QueueController:mgrBatch:', [$batch_uuid] );
 
         $batch = CodaBatch::where(['batch_uuid' => $batch_uuid])->firstOrFail();
+
+        $QMGR_ACTION = $batch->batch_action;
+        Log::channel('stack')->info('QueueController:mgrBatch:ACTION', [$QMGR_ACTION] );
         
-
+        
         // get batch info .....
-
 
         switch ($QMGR_ACTION) {
 
-            case 'TEST_ACTION':
-                
-                Log::channel('stack')->info('QueueController:mgrBatch:', [$QMGR_ACTION] );
+            case 'RUN':
+
+                // Save batch start timestamp
+                $batch->last_run_at = Carbon::now();
+                $batch->save();
+
+                // get batch options
+                $bo = json_encode($batch->batch_options);
+
+                                
+                Log::channel('stack')->info('QueueController:mgrBatch:RUN:with:', [$bo] );
+
+                // $bo->engines_selected;
+
+
+
                 $status_action = 'Batch TEST_ACTION submitted';
             
             break;

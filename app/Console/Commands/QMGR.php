@@ -14,11 +14,13 @@ use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Config;
 
 
-use App\Jobs\NerJob;
 use App\Jobs\SpacyJob;
+use App\Jobs\NerJob;
+use App\Jobs\ApiJob;
 use App\Jobs\CheckConfigJob;
 
 use App\Models\CodaBatch;
+use App\Models\CodaConfig;
 
 use Exception;
 use Illuminate\Http\Client\PendingRequest;
@@ -98,6 +100,93 @@ class QMGR extends Command
 
         switch ($cmd_par1) {
 
+            case "PUT":
+
+                $api_url = 'http://10.10.6.25:9998/tika';
+                Log::debug('ApiJob->check_url:PUT!', [$api_url] );
+                /*
+                $response = Http::attach(
+                    'attachment', file_get_contents('D:/tmp/simple.pdf'), 'simple.pdf', ['Content-Type' => 'application/pdf']
+                )
+                ->withOptions(['verify' => false])
+                ->put($api_url);
+
+                */
+
+                $response = Http::withBody(
+                    file_get_contents('D:/tmp/simple.pdf'), 'application/pdf'
+                )
+                ->withOptions(['verify' => false])->put($api_url);
+
+
+
+                Log::debug('ApiJob->response:', [$response] );
+                $statusCode = $response->status();
+                Log::debug('ApiJob->response:', [$statusCode] );
+
+                break;
+
+            case "APIJOB": // Run batch demo ...
+
+                $batch_id = "API01";
+
+                $job_id = [];
+                $job_id['description'] = 'API';
+                // $job_id['type'] = $faker->randomElement(['convert','hf','spacy']);
+                $job_id['type'] = 'coverter';
+                $job_id['engine'] = 'tika';
+                // $job_id['id'] = $faker->numberBetween($min = 1, $max = 2000);
+                // $job_id['id'] = $faker->uuid();
+                $job_id['id'] = 'JOB_AAA-BBB-CCCC';
+                $job_id['batch_uuid'] = $batch_id;
+                $job_id['file'] = '';
+                $job_id['api_url'] = 'http://10.10.6.25:9998';
+                $job_id['status_url'] = 'http://10.10.6.25:9998';
+                $job_id['root_folder'] = '';
+                $job_id['options'] = '{"method":"PUT","headers":"","file":""}';
+ 
+                Log::channel('stack')->info('QMGR add API Job to queue', [$job_id]);
+                ApiJob::dispatch($job_id);
+
+                break;
+
+            case "RB": // Run batch demo ...
+
+
+                $batch_uuid = 'BATCH1316';
+                Log::channel('stack')->info('QueueController:mgrBatch:', [$batch_uuid] );
+        
+                $batch = CodaBatch::where(['batch_uuid' => $batch_uuid])->firstOrFail();
+        
+                $QMGR_ACTION = $batch->batch_action;
+                Log::channel('stack')->info('QueueController:mgrBatch:ACTION', [$QMGR_ACTION] );
+                
+                $bo = json_decode($batch->batch_options);
+                Log::channel('stack')->info('QueueController:mgrBatch:RUN:with:', [$bo] );
+                Log::channel('stack')->info('', [$bo->engines_selected] );
+
+                foreach ($bo->engines_selected as $e) {
+
+                    $job_id = [];
+                    $job_id['description'] = 'CHECKCONFIG';
+                    // $job_id['type'] = $c->type;
+                    // $job_id['engine'] = $c->engine;
+                    // $job_id['batch_uuid'] = $batch_uuid;
+        
+                    Log::channel('stack')->info('EngineId', [$e]);
+
+                    $engine = CodaConfig::findOrFail($e);
+
+                    Log::channel('stack')->info('Engine', [$engine]);
+
+                    // CheckConfigJob::dispatch($job_id);
+
+                    // $job_list = $job_id;
+                }
+
+
+                break;
+
 
             case "JSON":
                 Log::debug('Save json and retrieve:', [] );
@@ -158,14 +247,14 @@ class QMGR extends Command
 
             case "ORM":
 
-                $config1 = \App\Models\Config::where([
+                $config1 = CodaConfig::where([
                     'type' => 'folder',
                     'engine' => 'root_folder',
                 ])->first();
 
                 Log::channel('stack')->info('QMGR merge:', [$config1]);
 
-                $config = \App\Models\Config::where([
+                $config = CodaConfig::where([
                     'type' => 'folder',
                     'engine' => 'root_folder',
                 ])->firstOrFail();

@@ -43,6 +43,8 @@ class BatchApiTest extends TestCase
 */
     
 
+    // Creazione di un BATCH CHECK_CONFIG
+
     public function test_api_create_batch_by_post(): string
     {
         $this->faker = Faker::create('PostCommentTest');
@@ -52,7 +54,7 @@ class BatchApiTest extends TestCase
         $response = $this->postJson('/api/batch', [
             'batch_uuid' => $batch_id,
             'batch_description' => $batch_id,
-            'batch_action' => 'CHECK_CONFIG',
+            'batch_action' => 'RUN',
             'batch_options' => '{"action_selected":0,"engines_selected":[1,44],"files_selected":[]}'
         ]);
 
@@ -64,6 +66,8 @@ class BatchApiTest extends TestCase
            
     }
     
+    // Run the batch newly just created
+
     /**
      * @depends test_api_create_batch_by_post
     */
@@ -74,7 +78,6 @@ class BatchApiTest extends TestCase
         // $batch_id = 'BATCH' . $this->faker->numberBetween($min = 1, $max = 2000);
 
         $response = $this->postJson('/api/qmgr', [
-            'QMGR_ACTION' => 'CHECK_CONFIG',
             'BATCH_UUID' => $batch_id,
         ]);
 

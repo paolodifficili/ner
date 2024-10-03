@@ -5,11 +5,11 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Config extends Model
+class CodaConfig extends Model
 {
     use HasFactory;
 
-    protected $table = 'config';
+    protected $table = 'codaconfig';
     protected $primaryKey = 'id';
 
     protected $fillable = [ 

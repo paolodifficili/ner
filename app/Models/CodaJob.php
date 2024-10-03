@@ -25,7 +25,9 @@ class CodaJob extends Model
         'description',
         'last_run_at', 
         'root_folder',
-        'service_url',
+        'api_url',
+        'status_url',
+        'options',
         'email',
     ];
 
