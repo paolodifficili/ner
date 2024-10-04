@@ -10,14 +10,15 @@ use Illuminate\Support\Facades\Storage;
 
 use App\Models\CodaJob;
 use App\Models\CodaBatch;
+use App\Models\CodaConfig;
 use App\Models\CodaFile;
-use App\Models\Config;
 
 use Illuminate\Support\Facades\Validator;
 
 use App\Http\Requests\StoreBatchRequest;
 
 use App\Jobs\CheckConfigJob;
+use App\Jobs\ApiJob;
 
 use Faker\Factory as Faker;
 use Carbon\Carbon;
@@ -71,7 +72,7 @@ class QueueController extends Controller
     // list file from folder
     public function showUploadFileList_OLD()
     {
-        $config = Config::where([
+        $config = CodaConfig::where([
             'type' => 'folder',
             'engine' => 'upload_folder',
         ])->first();
@@ -143,13 +144,10 @@ class QueueController extends Controller
         } else {
             $batch = CodaBatch::all();
             $jobs = [];
-
             $out = $batch;
         }
 
-    
 
-        
         
         // $codaJson = json_encode($coda);
 
@@ -161,10 +159,11 @@ class QueueController extends Controller
         // return $codaJson;
     }
 
-
+    // Salva un nuovo batch
     public function storeBatch(StoreBatchRequest $request)
     {
-      
+
+        // Crea il batch su db
         $details =[
             'batch_uuid' => $request->batch_uuid,
             'batch_description' => $request->batch_description,
@@ -177,7 +176,75 @@ class QueueController extends Controller
         $cb = CodaBatch::create($request->validated());
 
         Log::channel('stack')->info('QueueController:storeBatch:', [$cb] );
-        
+
+
+        // Create la cartella di lavoro corrispondente
+        $batch_folder = "NER_BATCH/" . $request->batch_uuid;
+        Storage::makeDirectory($batch_folder);
+
+        // Copia il/i file di input nella cartella INPUT
+        $ops = json_decode($request->batch_options);
+        Log::channel('stack')->info('QueueController:storeBatch:', [$ops] );
+
+        $f2conv = [];
+
+        foreach($ops->files_selected as $fId) {
+            Log::channel('stack')->info('QueueController:fId:', [$fId] );
+            $f = CodaFile::find($fId);
+
+            Log::channel('stack')->info('QueueController:f:', [$f] );
+
+            $oldFile = $f->file_path . "/" . $f->file_name;
+            $newFile = $batch_folder . "/INPUT/" . $f->file_name;
+
+            Log::channel('stack')->info('QueueController:copy:', [$oldFile, $newFile] );
+
+            Storage::copy($oldFile, $newFile);
+
+            $f2conv[] = $newFile;
+        }
+
+        // Esegue per ogni file attiva un JOB di conversione 
+        Log::channel('stack')->info('QueueController:convesione???:',[]);
+
+        foreach($f2conv as $f1) {
+            Log::debug('QueueController:convert:', [$f1] );
+            $allConv = CodaConfig::where(['type' => 'converter'])->get();
+            foreach($allConv as $c)
+            {
+                Log::debug('QueueController:convert:engine:', [$c->engine] );
+
+                $batch_id = $request->batch_uuid;
+
+                $job_id = [];
+                $job_id['description'] = 'API';
+                // $job_id['type'] = $faker->randomElement(['convert','hf','spacy']);
+                $job_id['type'] = $c->type;
+                $job_id['engine'] = $c->engine;
+                // $job_id['id'] = $faker->numberBetween($min = 1, $max = 2000);
+                // $job_id['id'] = $faker->uuid();
+                $job_id['id'] = 'JOB_AAA-BBB-CCCC';
+                $job_id['batch_uuid'] = $batch_id;
+                $job_id['api_url'] = $c->api;
+                $job_id['status_url'] = $c->api_status;
+
+                $options = [
+                    'method' => 'PUT',
+                    'headers' => [
+                        'application/pdf'
+                    ],
+                    'fileInput' => $f1,
+                    'fileOutput' => $f1 . ".txt",
+                ];
+                $job_id['options'] = json_encode($options);
+ 
+                Log::channel('stack')->info('QMGR add API Job to queue', [$job_id]);
+
+                ApiJob::dispatch($job_id);
+            }
+        }
+
+              
         $resp = [
             'success' => true,
             'data'    => $cb
@@ -186,6 +253,44 @@ class QueueController extends Controller
         return response()->json($resp);
         // return $codaJson;
     }
+
+
+
+    public function showJobAction(String $jobId = null)
+    {
+        Log::channel('stack')->info('QueueController:showJob:', [$jobId] );
+     
+        if($jobId) {
+            // $batch = CodaBatch::where(['batch_uuid' => $jobId])->get();
+            // $job = CodaJob::firstOrFail($jobId)->get();
+            $job = CodaJob::find($jobId);
+
+            $out = $job;
+    
+        } else {
+            $out = [];
+            // $batch = CodaBatch::all();
+            // $jobs = [];
+            // $out = $batch;
+        }
+
+        // $codaJson = json_encode($coda);
+        // Log::channel('stack')->info('QueueController:showBatch:', [$jobs, $batch] );
+     
+        return response()->json($out);
+
+        // return $codaJson;
+    }
+
+
+
+
+
+
+
+
+
+
 
 /*
 
@@ -334,7 +439,7 @@ class QueueController extends Controller
     public function showConfig()
     {
         Log::channel('stack')->info('QueueController:index:', [] );
-        $coda = Config::all();
+        $coda = CodaConfig::all();
         $codaJson = json_encode($coda);
 
         return response()->json($coda);

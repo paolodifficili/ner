@@ -27,7 +27,7 @@
         const route = VueRouter.useRoute();
 
         console.log(route.params.id)
-        const res = await fetch("/api/batch/" + route.params.id );
+        const res = await fetch("/api/job/" + route.params.id );
         const finalRes = await res.json();
         
         this.batch_jobs = finalRes.batch_jobs;
@@ -150,7 +150,7 @@
     dark
     flat
  >
-    <v-toolbar-title>Batch info - {{ $route.params.id }}</v-toolbar-title>
+    <v-toolbar-title>Job info - {{ $route.params.id }}</v-toolbar-title>
 </v-toolbar>
 
 

@@ -25,6 +25,7 @@ Route::get('/coda/show', [QueueController::class, 'showCoda']);
 Route::get('/upload/list', [QueueController::class, 'showUploadFileList']);
 Route::get('/config/list', [QueueController::class, 'showConfig']);
 Route::get('/action/list', [QueueController::class, 'showBatchAction']);
+Route::get('/job/{id?}', [QueueController::class, 'showJobAction']);
 
 Route::get('/batch/{id?}', [QueueController::class, 'showBatch']);
 

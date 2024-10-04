@@ -55,7 +55,7 @@ class BatchApiTest extends TestCase
             'batch_uuid' => $batch_id,
             'batch_description' => $batch_id,
             'batch_action' => 'RUN',
-            'batch_options' => '{"action_selected":0,"engines_selected":[1,44],"files_selected":[]}'
+            'batch_options' => '{"action_selected":0,"engines_selected":[1,44],"files_selected":[5,7]}'
         ]);
 
         $data_decoded = json_encode($response);

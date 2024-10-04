@@ -100,6 +100,21 @@ class QMGR extends Command
 
         switch ($cmd_par1) {
 
+            case "LV":
+
+                Log::debug('LV', [] );
+                $allConv = CodaConfig::where(['type' => 'converter'])->get();
+                foreach($allConv as $c)
+                {
+
+                    Log::debug('ApiJob->check_url:PUT!', [$c->engine] );
+
+                }
+
+
+                break;
+
+
             case "PUT":
 
                 $api_url = 'http://10.10.6.25:9998/tika';
@@ -115,14 +130,13 @@ class QMGR extends Command
 
                 $response = Http::withBody(
                     file_get_contents('D:/tmp/simple.pdf'), 'application/pdf'
-                )
-                ->withOptions(['verify' => false])->put($api_url);
-
+                )->put($api_url);
 
 
                 Log::debug('ApiJob->response:', [$response] );
                 $statusCode = $response->status();
                 Log::debug('ApiJob->response:', [$statusCode] );
+                Log::debug('ApiJob->response:', [$response->body()] );
 
                 break;
 
@@ -139,11 +153,18 @@ class QMGR extends Command
                 // $job_id['id'] = $faker->uuid();
                 $job_id['id'] = 'JOB_AAA-BBB-CCCC';
                 $job_id['batch_uuid'] = $batch_id;
-                $job_id['file'] = '';
-                $job_id['api_url'] = 'http://10.10.6.25:9998';
+                $job_id['api_url'] = 'http://10.10.6.25:9998/tika';
                 $job_id['status_url'] = 'http://10.10.6.25:9998';
-                $job_id['root_folder'] = '';
-                $job_id['options'] = '{"method":"PUT","headers":"","file":""}';
+
+                $options = [
+                    'method' => 'PUT',
+                    'headers' => [
+                        'application/pdf'
+                    ],
+                    'fileInput' => 'NER_BATCH/$batch_id/simple.pdf',
+                    'fileOutput' => 'NER_BATCH/$batch_id/tika-simeple.txt',
+                ];
+                $job_id['options'] = json_encode($options);
  
                 Log::channel('stack')->info('QMGR add API Job to queue', [$job_id]);
                 ApiJob::dispatch($job_id);

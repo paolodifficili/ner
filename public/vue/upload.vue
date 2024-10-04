@@ -3,7 +3,7 @@
     data() {
       return {
         dialog: false,
-        power: 10,
+        power: 0,
         files: [],
         listItems: []
       }
@@ -72,8 +72,13 @@
 <v-toolbar-title>Upload file (chunk)</v-toolbar-title>
 </v-toolbar>
 
+<v-sheet class="mx-auto">
+
 <v-file-input clearable id="picker" label="File input" v-model="files"></v-file-input>
-<v-btn  color="primary" elevation="8" size="large" @click="uploadFile">Upload</v-btn>
+
+<v-btn  block color="primary" elevation="8" size="large" @click="uploadFile">Upload</v-btn>
+
+<v-divider thickness="10"  inset></v-divider>
 
 <v-progress-linear 
 color="blue-grey" height="20" v-model="power">
@@ -82,11 +87,9 @@ color="blue-grey" height="20" v-model="power">
 <v-list :items="listItems"></v-list>
 <p>https://github.com/muxinc/upchunk</p>
 
+</v-sheet>
 
- <v-dialog
-      v-model="dialog"
-      width="auto"
-    >
+ <v-dialog  v-model="dialog"  width="auto" >
       <v-card
         max-width="400"
         prepend-icon="mdi-update"

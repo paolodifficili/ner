@@ -79,3 +79,22 @@ git push -u -f origin master
 php artisan make:migration create_TABLENAME_table
 -- edit file
 php artisan migrate
+
+
+---
+
+Creazione di un batch
+
+- Creazione di una cartella (NER_BATCH/$batch_id)
+- Inserimento di tutti i file di lavoro
+- Una sotto cartella per il lavoro e preparazione
+
+ApiJob da options riceve tutte le indicazioni 
+    method, 
+    contentType
+    input (fileId/name)
+    output (fileId/name)
+    per interagire con un servizio api
+
+
+FileJob

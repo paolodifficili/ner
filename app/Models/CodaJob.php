@@ -28,6 +28,8 @@ class CodaJob extends Model
         'api_url',
         'status_url',
         'options',
+        'data_in',
+        'data_out',
         'email',
     ];
 

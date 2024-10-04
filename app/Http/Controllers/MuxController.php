@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
-use App\Models\Config;
+use App\Models\CodaConfig;
 
 use App\Models\CodaFile;
 
@@ -71,7 +71,7 @@ class MuxController extends Controller
 
         Log::channel('stack')->info('MuxController:update:', [$fileName, $uuid] );
 
-        $config = Config::where([
+        $config = CodaConfig::where([
             'type' => 'folder',
             'engine' => 'upload_folder',
         ])->first();
@@ -106,6 +106,7 @@ class MuxController extends Controller
 
         if ( ($endSize+1) == $totalSize) {
             
+            $filePath = $uploadFolder . "/" . $uuid;
             $fileDest = $uploadFolder . "/" . $uuid . "/" . $fileName;
             Log::info('MuxController write merge & clean :', [$fileDest] );
             
@@ -153,9 +154,9 @@ class MuxController extends Controller
 
             $info = [
                 'file_uuid' => $uuid,
-                'file_name' => $fname,
+                'file_name' => $fileName,
                 'file_size' => '',
-                'file_path' => '',
+                'file_path' => $filePath,
                 'file_extension' => '',
                 'file_root_path' => $uploadFolder
             ];

@@ -6,15 +6,16 @@
   >
     <template v-slot:top>
       <v-toolbar flat>
-        <v-toolbar-title
-          >https://jsonplaceholder.typicode.com/posts</v-toolbar-title
+        <v-toolbar-title>Batch list ...</v-toolbar-title
         >
         <v-divider class="mx-4" inset vertical></v-divider>
         <v-spacer></v-spacer>
         <v-dialog v-model="dialog" max-width="500px">
           <template v-slot:activator="{ props }">
-            <v-btn class="mb-2" color="primary" dark v-bind="props">
-              New Item
+            <v-btn class="mb-2" color="primary" 
+            @click="go2newBatch"
+            dark v-bind="props">
+              New Batch
             </v-btn>
           </template>
           <v-card>
@@ -84,14 +85,7 @@
       </v-toolbar>
     </template>
     <template v-slot:item.actions="{ item }">
-      <v-icon class="me-2" size="small" @click="editItem(item)">
-        mdi-pencil
-      </v-icon>
-
-      <v-icon size="small" @click="deleteItem(item)"> mdi-delete </v-icon>
-
-      <v-icon size="small" @click="edit2Item(item)"> mdi-cup </v-icon>
-      <v-btn color="primary" @click="edit2Item(item)"> Edit2 </v-btn>
+      <v-btn color="primary" @click="edit2Item(item)"> -> </v-btn>
     </template>
     <template v-slot:no-data>
       <v-btn color="primary" @click="initialize"> Reset </v-btn>
@@ -114,28 +108,17 @@ export default {
     dialog: false,
     dialogDelete: false,
     headers: [
-      { title: 'Calories', key: 'id' },
-      { title: 'Fat (g)', key: 'batch_uuid' },
-      { title: 'Carbs (g)', key: 'title' },
-      { title: 'Protein (g)', key: 'body' },
-      { title: 'Actions', key: 'actions', sortable: false },
+      { title: 'ID', key: 'id' },
+      { title: 'Batch Id', key: 'batch_uuid' },
+      { title: 'description', key: 'batch_descrition' },
+      { title: 'action', key: 'batch_action' },
+      { title: 'last run', key: 'last_run_at' },
+      { title: 'Actions', key: 'actions'},
     ],
     desserts: [],
     editedIndex: -1,
-    editedItem: {
-      name: '',
-      calories: 0,
-      fat: 0,
-      carbs: 0,
-      protein: 0,
-    },
-    defaultItem: {
-      name: '',
-      calories: 0,
-      fat: 0,
-      carbs: 0,
-      protein: 0,
-    },
+    editedItem: { },
+    defaultItem: { },
   }),
 
   computed: {
@@ -164,6 +147,7 @@ export default {
       const res = await fetch('api/batch');
       const finalRes = await res.json();
       this.listItems = finalRes;
+      console.log(this.listItems);
       this.overlay = false;
     },
 
@@ -181,6 +165,12 @@ export default {
       console.log(item);
       this.$router.push('/batch/' + item.batch_uuid);
     },
+
+
+    go2newBatch() {
+      this.$router.push('/batchnew');
+    },
+
 
     deleteItem(item) {
       this.editedIndex = this.desserts.indexOf(item);

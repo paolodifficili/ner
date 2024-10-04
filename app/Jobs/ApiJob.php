@@ -13,9 +13,12 @@ use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Storage;
 
 
 use App\Models\CodaJob;
+use App\Models\CodaFile;
+
 
 use Carbon\Carbon;
 
@@ -66,63 +69,95 @@ class ApiJob implements ShouldQueue
     public function handle()
     {
 
-
-        Log::debug('ApiJob->handle:', [$this->job->uuid() ] );
-
+        Log::debug('ApiJob:START:', [$this->job->uuid() ] );
         $this->jobInfo['__UUID__'] = $this->job->uuid();
 
-        Log::debug('ApiJob->info:', [$this->jobInfo] );
+        Log::debug('ApiJob:info:', [$this->jobInfo] );
 
         $coda = CodaJob::firstOrCreate([
             'job_uuid' => $this->job->uuid(),
             'uuid_internal' => $this->uuid,
+            'batch_uuid' => $this->jobInfo['batch_uuid'],
             'description' => $this->jobInfo['description'],
             'type' => $this->jobInfo['type'],
-            'file' => $this->jobInfo['file'],
-            'root_folder' => $this->jobInfo['root_folder'],
+            'engine' => $this->jobInfo['engine'],
             'api_url' => $this->jobInfo['api_url'],
             'status_url' => $this->jobInfo['status_url'],
+            'options' => $this->jobInfo['options'],
         ]);
 
-        $city = "Rome";
-        $apiKey = 'la-tua-api-key';
+        $options = json_decode($this->jobInfo['options']);
 
+        Log::debug('ApiJob:options:', [$options] );
+        Log::debug('ApiJob:fileInput:', [$options->fileInput] );
+        Log::debug('ApiJob:headers:', [$options->headers] );
+        Log::debug('ApiJob:method:', [$options->method] );
 
         // $url = "https://dummy.restapiexample.com/api/v1/employee/1";
         $status_url = $this->jobInfo['status_url'];
         $api_url = $this->jobInfo['api_url'];
 
+        $coda->last_run_at = Carbon::now();
+        $coda->save();
 
-        Log::debug('ApiJob->check_url:with no verify!', [$status_url] );
-          
+                  
         // CALL URL
-        $response = Http::withOptions(['verify' => false])->get($status_url);
-        $statusCode = $response->status();
-        Log::debug('ApiJob->response:', [$statusCode] );
+        // Log::debug('ApiJob:check_url:', [$status_url] );
+        // $response = Http::withOptions(['verify' => false])->get($status_url);
+        // Log::debug('ApiJob:response:status check', [$response->status()] );
+
+        // Salvare lo stato del check ...
+
+        // Get file content
+        // $codaFile = CodaFile::findOrFail($options->fileInput);
+        // $codaFile = CodaFile::findOrFail($options->fileInput);
+        Log::debug('ApiJob:PUT_url:FILE INPUT!', [$options->fileInput] );
+        
+        
+        Log::debug('ApiJob:api_url:PUT:', [$api_url] );
 
 
-        Log::debug('ApiJob->check_url:PUT!', [$api_url] );
-        $response = Http::attach(
-            'attachment', file_get_contents('D:/tmp/simple.pdf'), 'simple.pdf', ['Content-Type' => 'application/pdf']
-        )
-        ->withOptions(['verify' => false])
-        ->put($api_url);
-        Log::debug('ApiJob->response:', [$response] );
-        $statusCode = $response->status();
-        Log::debug('ApiJob->response:', [$statusCode] );
+        try {
+            $response = Http::withBody(
+                Storage::get($options->fileInput), 'application/pdf'
+            )->put($api_url);
 
+            $statusCode = $response->status();
+            Log::debug('ApiJob:response:api:', [$response->status()] );
+
+            Log::debug('ApiJob:api_url:save2:', [$options->fileOutput] );
+            Storage::write($options->fileOutput, $response->body());
+    
+            $coda->status = 200;
+            $coda->save();
+    
+        }
+
+        catch (\Exception $e) {
+            Log::channel('stack')->error('ApiJob Exception:', [$e->getMessage()]);    
+
+            $coda->status_description = $e->getMessage();
+            $coda->status = 999;
+            $coda->save();
+        }
+        
+
+
+        // write to $options->fileOutput
+        
+        // Log::debug('ApiJob->response:', [$response] );
+     
+
+        // TODO GESTIONE ERRORI    
 
         // curl --location --request PUT '10.10.6.25:9998/tika' \
         // --header 'Content-Type: application/pdf' \
         // --data '@/c:/userData/M05831/Documenti/GDPR_PARTE_2.pdf'
 
+       
 
-        // SAVE RESPONSE to file
+        // Update Job Status
         
-
-   
-            
-
     }
 
     /**

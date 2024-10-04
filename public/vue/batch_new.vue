@@ -3,6 +3,8 @@
     data() {
       return {
         overlay: false,
+        snackbar: false,
+        txtSnackbar : '',
         batch_id : '',
         
         file_list: [],
@@ -19,6 +21,7 @@
     methods: {
 
       async loadData() {
+
         this.overlay = true;  
         const route = VueRouter.useRoute();
         
@@ -40,9 +43,23 @@
 
       },
 
+      getFormattedTimestamp() {
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0'); // Mese parte da 0, quindi aggiungiamo 1
+        const day = String(now.getDate()).padStart(2, '0');
+        const hours = String(now.getHours()).padStart(2, '0');
+        const minutes = String(now.getMinutes()).padStart(2, '0');
+        const seconds = String(now.getSeconds()).padStart(2, '0');
+        return `${year}_${month}_${day}_${hours}_${minutes}_${seconds}`;
+      },
+
       handleSubmit() {
             // POST request using fetch with error handling
 
+        console.log('handleSubmit...');
+
+        this.overlay = true; 
         console.log(this.files_selected);
         console.log(this.engines_selected);
         console.log(this.action_selected);
@@ -80,12 +97,18 @@
                 }
 
                 console.log(data);
+                this.overlay = false;
+                this.txtSnackbar = 'Batch saved!';
+                this.snackbar = true;
 
                 
                 })
                 .catch(error => {
-                this.errorMessage = error;
-                console.error('There was an error!', error);
+                  this.overlay = false;
+                  this.errorMessage = error;
+                  this.txtSnackbar = error;
+                  this.snackbar = true;
+                  console.error('There was an error!', error);
                 });
             }
 
@@ -94,8 +117,8 @@
     mounted() {
       
         const route = VueRouter.useRoute();
-        const idx = Math.floor(Math.random() * 100000);
-        this.batch_id = 'BATCH' + idx;
+        const idx = this.getFormattedTimestamp();
+        this.batch_id = 'BATCH_' + idx;
     
 
         console.log('mounted --- load data');
@@ -147,7 +170,7 @@ multiple
 persistent-hint
 ></v-select>
 
-<v-btn @click="handleSubmit"> Invia </v-btn>
+<v-btn block color="primary" elevation="8" size="large" @click="handleSubmit"> CREATE NEW BATCH </v-btn>
 
 <v-overlay
 :model-value="overlay"
@@ -159,6 +182,20 @@ class="align-center justify-center"
   indeterminate
 ></v-progress-circular>
 </v-overlay>
+
+<v-snackbar v-model="snackbar">
+      {{ txtSnackbar }}
+      <template v-slot:actions>
+        <v-btn
+          color="blue"
+          variant="text"
+          @click="snackbar = false"
+        >
+          Close
+        </v-btn>
+      </template>
+</v-snackbar>
+
 
 <pre>{{ action_selected }}</pre>
 <pre>{{ engines_selected }}</pre>
