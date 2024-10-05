@@ -100,6 +100,24 @@ class QMGR extends Command
 
         switch ($cmd_par1) {
 
+
+            case "WK": //work load builder
+
+                $folder = "NER_BATCH/BATCH_2024_10_05_11_33_32/INPUT/";
+                $files = Storage::files($folder);
+                Log::channel('stack')->info('WKLB:', [$files]);
+                foreach($files as $fname)
+                {
+                    Log::debug('ApiJob->check_url:PUT!', [$fname] );
+                    $path_parts = pathinfo($fname);
+                    Log::debug('ApiJob->check_url:PUT!', [$path_parts] );
+
+                }
+
+
+
+                break;
+
             case "LV":
 
                 Log::debug('LV', [] );
@@ -174,7 +192,7 @@ class QMGR extends Command
             case "RB": // Run batch demo ...
 
 
-                $batch_uuid = 'BATCH1316';
+                $batch_uuid = 'BATCH_2024_10_05_09_52_28';
                 Log::channel('stack')->info('QueueController:mgrBatch:', [$batch_uuid] );
         
                 $batch = CodaBatch::where(['batch_uuid' => $batch_uuid])->firstOrFail();

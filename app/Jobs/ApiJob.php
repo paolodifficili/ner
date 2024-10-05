@@ -117,25 +117,31 @@ class ApiJob implements ShouldQueue
         Log::debug('ApiJob:api_url:PUT:', [$api_url] );
 
 
-        try {
-            $response = Http::withBody(
-                Storage::get($options->fileInput), 'application/pdf'
-            )->put($api_url);
 
+        try {
+
+            if($options->method == "PUT") {
+                $response = Http::withBody(
+                    Storage::get($options->fileInput), 'application/pdf'
+                )->put($api_url);    
+                Log::debug('ApiJob:api_url:save2:', [$options->fileOutput] );
+                Storage::write($options->fileOutput, $response->body());
+            }
+
+            if($options->method == "GET") {
+                $response = Http::get($api_url, []);
+            }
+ 
             $statusCode = $response->status();
             Log::debug('ApiJob:response:api:', [$response->status()] );
-
-            Log::debug('ApiJob:api_url:save2:', [$options->fileOutput] );
-            Storage::write($options->fileOutput, $response->body());
+            
     
             $coda->status = 200;
             $coda->save();
-    
         }
 
         catch (\Exception $e) {
             Log::channel('stack')->error('ApiJob Exception:', [$e->getMessage()]);    
-
             $coda->status_description = $e->getMessage();
             $coda->status = 999;
             $coda->save();

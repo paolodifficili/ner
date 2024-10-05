@@ -48,13 +48,13 @@ class BatchApiTest extends TestCase
     public function test_api_create_batch_by_post(): string
     {
         $this->faker = Faker::create('PostCommentTest');
-        $batch_id = 'BATCH' . $this->faker->numberBetween($min = 1, $max = 2000);
+        $batch_id = 'BATCH_TEST_' . $this->faker->numberBetween($min = 1, $max = 2000);
 
 
         $response = $this->postJson('/api/batch', [
             'batch_uuid' => $batch_id,
             'batch_description' => $batch_id,
-            'batch_action' => 'RUN',
+            'batch_action' => 'CHECK_CONFIG',
             'batch_options' => '{"action_selected":0,"engines_selected":[1,44],"files_selected":[5,7]}'
         ]);
 

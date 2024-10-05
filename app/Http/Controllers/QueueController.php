@@ -104,12 +104,12 @@ class QueueController extends Controller
         Log::channel('stack')->info('QueueController:showBatchActions:', [] );
         $coda = [
             [
-                "id" => 0,
+                "id" => "CHECK_CONFIG",
                 "value" => "CHECK_CONFIG",
             ],
 
             [
-                "id" => 1,
+                "id" => "RUN_ENGINE",
                 "value" => "RUN_ENGINE",
             ],
         ];
@@ -243,7 +243,6 @@ class QueueController extends Controller
                 ApiJob::dispatch($job_id);
             }
         }
-
               
         $resp = [
             'success' => true,
@@ -304,7 +303,6 @@ class QueueController extends Controller
 
 */
 
-
     public function mgrBatch(Request $request)
     {
       
@@ -313,8 +311,8 @@ class QueueController extends Controller
         $validatedData = $request->validate([
             'BATCH_UUID' => ['required'],
         ]);
-
         
+        // TODO validate parameters
         Log::channel('stack')->info('QueueController:mgrBatch:', [$validatedData] );
 
         $status = 200;
@@ -335,7 +333,7 @@ class QueueController extends Controller
 
         switch ($QMGR_ACTION) {
 
-            case 'RUN':
+            case 'RUN_ENGINE':
 
                 // Save batch start timestamp
                 $batch->last_run_at = Carbon::now();
@@ -349,91 +347,90 @@ class QueueController extends Controller
 
                 // $bo->engines_selected;
 
-
-
                 $status_action = 'Batch TEST_ACTION submitted';
-            
+                $out = [
+                    'message' => $status_action
+                ];
+                $status = 200;
+
             break;
             
-
+            // controlla tutta la configurazione test dei servizi    
             case 'CHECK_CONFIG':
-
-                /* build a batch to check configuration */
 
                 $batch->last_run_at = Carbon::now();
                 $batch->save();
-                                
-                
+
                 // recupera tutte le configurazioni e per ognuna esegue il test
         
-                $job_list = [];
+                Log::debug('QueueController:mgrBatch:', ['CHECK_CONFIG'] );
 
-                $coda = Config::all();
+                // $allConv = CodaConfig::where(['type' => 'converter'])->get();
+                $allConv = CodaConfig::all();
+                foreach($allConv as $c)
+                {
+                    Log::debug('QueueController:CHECK:engine:', [$c->type ,$c->engine] );
+                    // se folder (controlla la scrittura su file ...) TODO
+                    if ($c->type != 'folder') {
 
-                foreach ($coda as $c) {
+                        $batch_id = $request->batch_uuid;
 
-                    $job_id = [];
-                    $job_id['description'] = 'CHECKCONFIG';
-                    $job_id['type'] = $c->type;
-                    $job_id['engine'] = $c->engine;
-                    $job_id['batch_uuid'] = $batch_uuid;
-        
-                    Log::channel('stack')->info('QueueController:mgrBatch', [$job_id]);
-                    CheckConfigJob::dispatch($job_id);
-
-                    $job_list = $job_id;
+                        $job_id = [];
+                        $job_id['description'] = 'CHECK CONFIG ' . $c->engine;
+                        // $job_id['type'] = $faker->randomElement(['convert','hf','spacy']);
+                        $job_id['type'] = $c->type;
+                        $job_id['engine'] = $c->engine;
+                        // $job_id['id'] = $faker->numberBetween($min = 1, $max = 2000);
+                        // $job_id['id'] = $faker->uuid();
+                        $job_id['id'] = 'JOB_AAA-BBB-CCCC';
+                        $job_id['batch_uuid'] = $batch_uuid;
+                        $job_id['api_url'] = $c->api_status;
+                        $job_id['status_url'] = $c->api_status;
+                
+                        $options = [
+                            'method' => 'GET',
+                            'headers' => [
+                                'application/pdf'
+                            ],
+                            'timeout' => '',
+                            'query' => '',
+                            'fileInput' => '',
+                            'fileOutput' => '',
+                        ];
+                        $job_id['options'] = json_encode($options);
+                
+                        Log::channel('stack')->info('QueueController add API Job to queue', [$job_id]);
+                
+                        ApiJob::dispatch($job_id);
+              
+                    }
                 }
-        
-                $data = [
-                    "batch_uuid" => $batch_uuid,
-                    "job_list" => $job_list
+
+                $out = [
+                    'message' => 'all Job submitted!'
                 ];
 
-                $status_action = 'Batch submitted';
+
             break;
-            
+
             default:
                 Log::channel('stack')->error('QueueController:mgrBatch', ['ERROR!']);
                 $status = 501;
                 $status_action = 'NO QMGR_ACTION FOUND!';
+                $out = [
+                    'message' => 'NO Action found!'
+                ];
+                
             break;
+
+
         }
-
-
-
-            /*
-            $input = [
-                'user' => [
-                    'name' => 'Taylor Otwell',
-                    'username' => 'taylorotwell',
-                    'admin' => true,
-                ],
-            ];
-            Validator::make($input, [
-                'user' => 'array:name,username',
-            ]);
-            */
-
-/*
-            $out = [
-                'action' => $QMGR_ACTION,
-                'status' => $status_action
-            ];
-
-
-            $out = array_merge($out, $data);
-            
-        } else {
-            Log::channel('stack')->error('QueueController:mgrBatch:', ['NO_ACTION'] );
-            $out = ['message' => 'QMGR_ACTION not found'];
-            $status = 501;
-        }
-*/
 
         return response()->json($out, $status);
-        
-        // return $codaJson;
+
     }
+
+
 
 
     public function showConfig()

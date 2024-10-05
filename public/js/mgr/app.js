@@ -29,6 +29,7 @@ const routes = [
   { path: '/profile/:id', component: Vue.defineAsyncComponent(()=>loadModule('./vue/profile.vue', options)) },
   { path: '/batch', component: Vue.defineAsyncComponent(()=>loadModule('./vue/batch.vue', options)) },
   { path: '/batch/:id', component: Vue.defineAsyncComponent(()=>loadModule('./vue/batch_item.vue', options)) },
+  { path: '/job/:id', component: Vue.defineAsyncComponent(()=>loadModule('./vue/job_item.vue', options)) },
   { path: '/batchnew', component: Vue.defineAsyncComponent(()=>loadModule('./vue/batch_new.vue', options)) },
   { path: '/crud2', component: Vue.defineAsyncComponent(()=>loadModule('./vue/crud2.vue', options)) },
 ]

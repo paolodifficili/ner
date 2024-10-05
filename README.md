@@ -98,3 +98,6 @@ ApiJob da options riceve tutte le indicazioni
 
 
 FileJob
+
+
+# Fpdi composer install laravel  - composer require setasign/fpdi

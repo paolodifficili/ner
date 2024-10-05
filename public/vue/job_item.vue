@@ -4,6 +4,8 @@
       return {
 
         overlay: false,
+        job_info : {},
+        job_info_options : {},
         batch_info: [],
         batch_jobs: [],
         batch_item: {},
@@ -21,6 +23,11 @@
     },
     methods: {
 
+       showBatch(item) {
+        console.log(item);
+        this.$router.push('/batch/' + item.batch_uuid);
+      },
+
       async getData(id) {
 
         this.overlay = true;  
@@ -30,6 +37,9 @@
         const res = await fetch("/api/job/" + route.params.id );
         const finalRes = await res.json();
         
+        this.job_info = finalRes;
+
+        /*
         this.batch_jobs = finalRes.batch_jobs;
         this.batch_info = finalRes.batch_info;
         this.batch_item = finalRes.batch_info[0];
@@ -47,34 +57,15 @@
         const res3 = await fetch("api/action/list");
         this.action_list = await res3.json();
 
+        */
+
         // decode options 
 
-        console.log(this.batch_item.batch_options);
+        console.log(this.job_info.options);
 
-        const ob = JSON.parse(this.batch_item.batch_options)
-
-        console.log(ob);
-
-        this.engines_selected =  ob.engines_selected;
-        this.files_selected = ob.files_selected;
-        this.action_selected =  ob.action_selected;
-
-
-        const selectedProperties = ['batch_uuid', 'type', 'engine', 'status', 'status_description', 'api_url', 'status_url', 'last_run_at' ];
-
-        // Riduzione dell'array di oggetti
-        this.reducedData = this.batch_jobs.map(obj => {
-            // Creiamo un nuovo oggetto con solo le proprietà desiderate
-            const newObj = {};
-            selectedProperties.forEach(prop => {
-                if (obj.hasOwnProperty(prop)) {
-                    newObj[prop] = obj[prop];
-                }
-            });
-            return newObj;
-        });
-
-        console.log(this.reducedData);
+        this.job_info_options = JSON.parse(this.job_info.options)
+        console.log(this.job_info_options);
+      
 
         
 
@@ -150,44 +141,52 @@
     dark
     flat
  >
-    <v-toolbar-title>Job info - {{ $route.params.id }}</v-toolbar-title>
+    <v-toolbar-title>Job info - {{ $route.params.id }} </v-toolbar-title>
+    <v-btn class="mb-2"    @click="showBatch(job_info)">
+              Batch {{job_info.batch_uuid}} 
+            </v-btn>
 </v-toolbar>
 
+<v-table>
+    <thead>
+      <tr>
+        <th class="text-left">Key</th>
+        <th class="text-left">Value</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr
+        v-for="(value, key) in job_info"
+        :key="key"
+      >
+        <td>{{ key }}</td>
+        <td>{{ value }}</td>
+      </tr>
+    </tbody>
+  </v-table>
 
 
 
-  <v-text-field v-model="batch_item.id" label="ID"></v-text-field>
-  <v-text-field v-model="batch_item.batch_uuid" label="batch_uuid"></v-text-field>
-  <v-text-field v-model="batch_item.batch_options" label="batch_options"></v-text-field>
+<v-divider inset></v-divider>
+<v-list-subheader inset>Files</v-list-subheader>
 
-  <v-select
-  v-model="action_selected"
-  :items="action_list"
-  item-title="value"
-  item-subtitle="action"
-  item-value="id"
-  label="Select action"
-  ></v-select>
 
-  <v-select
-  v-model="engines_selected"
-  :items="config_list"
-  item-title="engine"
-  item-subtitle="type"
-  item-value="id"
-  label="Select Engine"
-  multiple
-  ></v-select>
+<v-list lines="two">
+  <v-list-item
+    v-for="(value, key) in job_info_options" 
+    :key="key"
+  >{{key}} : {{ value }}</v-list-item>
+</v-list>
 
-  <v-select
-  v-model="files_selected"
-  :items="file_list"
-  label="Select File"
-  item-title="file_name"
-  item-value="id"
-  multiple
-  persistent-hint
-  ></v-select>
+<v-col cols="12" md="6" sm="6">
+        <v-btn  color="success" @click="handleRun"  size="x-large" block>{{job_info_options.fileInput}}</v-btn>
+</v-col>
+
+
+<v-col cols="12" md="6" sm="6">
+        <v-btn  color="success" @click="handleRun"  size="x-large" block>{{job_info_options.fileOutput}}</v-btn>
+</v-col>
+
 
 
     <v-row justify="center">
@@ -211,20 +210,7 @@
     <v-toolbar-title>Jobs list</v-toolbar-title>
 </v-toolbar>
 
-<v-data-table :items="reducedData">
 
-      <template v-slot:item.status="{ item }">
-        <div class="text-end">
-          <v-chip
-            :color="(item.status != 200) ? 'red' : 'green'"
-            :text="item.status"
-            class="text-uppercase"
-            label
-          ></v-chip>
-        </div>
-      </template>
-
-</v-data-table>
 
 
 

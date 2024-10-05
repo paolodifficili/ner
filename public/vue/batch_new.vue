@@ -73,7 +73,7 @@
         const obj = {
             batch_uuid:  this.batch_id,
             batch_description : this.batch_id,
-            batch_action: 'CHECK_CONFIG',
+            batch_action: this.action_selected,
             batch_options: JSON.stringify(ops)
         };
 

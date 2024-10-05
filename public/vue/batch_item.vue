@@ -60,7 +60,7 @@
         this.action_selected =  ob.action_selected;
 
 
-        const selectedProperties = ['batch_uuid', 'type', 'engine', 'status', 'status_description', 'api_url', 'status_url', 'last_run_at' ];
+        const selectedProperties = ['id','batch_uuid', 'type', 'engine', 'status', 'status_description', 'api_url', 'status_url', 'last_run_at' ];
 
         // Riduzione dell'array di oggetti
         this.reducedData = this.batch_jobs.map(obj => {
@@ -82,6 +82,11 @@
       },
 
     handleDelete()  {}, 
+
+    showJob(item) {
+      console.log(item);
+      this.$router.push('/job/' + item.id);
+    },
 
     handleRun() {
             // POST request using fetch with error handling
@@ -222,6 +227,10 @@
             label
           ></v-chip>
         </div>
+      </template>
+
+      <template v-slot:item.id="{ item }">
+        <v-btn color="primary" @click="showJob(item)">{{item.id}}</v-btn>
       </template>
 
 </v-data-table>
