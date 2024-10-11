@@ -30,6 +30,7 @@ Route::get('/job/{id?}', [QueueController::class, 'showJobAction']);
 Route::get('/batch/{id?}', [QueueController::class, 'showBatch']);
 
 Route::put('/batch/{id}', [QueueController::class, 'changeBatch']);
+Route::delete('/batch/{id}', [QueueController::class, 'deleteBatch']);
 
 Route::post('/batch', [QueueController::class, 'storeBatch']);
 

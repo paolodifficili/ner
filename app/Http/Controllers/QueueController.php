@@ -255,6 +255,40 @@ class QueueController extends Controller
 
 
 
+    // elimina le info di un batch o la lista dei batch
+
+    public function deleteBatch(String $batchId = null)
+    {
+     Log::channel('stack')->info('QueueController:deleteBatch:', [$batchId] );
+  
+     if($batchId) {
+         $batch = CodaBatch::where(['batch_uuid' => $batchId])->delete();
+         $jobs = CodaJob::where(['batch_uuid' => $batchId])->delete();
+
+         $out = [
+             'message' => $batchId . " deleted!",
+         ];
+ 
+     } else {
+         $out = [
+            'message' => 'NO batchId',
+        ];
+
+     }
+     
+     // $codaJson = json_encode($coda);
+
+     Log::channel('stack')->info('QueueController:deleteBatch:', [$jobs, $batch] );
+
+   
+     return response()->json($out);
+
+     // return $codaJson;
+ }
+
+
+    // ------------------------------------------------------------------------------
+
     public function showJobAction(String $jobId = null)
     {
         Log::channel('stack')->info('QueueController:showJob:', [$jobId] );

@@ -6,7 +6,7 @@
   >
     <template v-slot:top>
       <v-toolbar flat>
-        <v-toolbar-title>Batch list ...</v-toolbar-title
+        <v-toolbar-title>Config list ...</v-toolbar-title
         >
         <v-divider class="mx-4" inset vertical></v-divider>
         <v-spacer></v-spacer>
@@ -15,7 +15,7 @@
             <v-btn class="mb-2" color="primary" 
             @click="go2newBatch"
             dark v-bind="props">
-              New Batch
+              New Config
             </v-btn>
           </template>
           <v-card>
@@ -109,11 +109,11 @@ export default {
     dialogDelete: false,
     headers: [
       { title: 'ID', key: 'id' },
-      { title: 'Batch Id', key: 'batch_uuid' },
-      { title: 'description', key: 'batch_descrition' },
-      { title: 'action', key: 'batch_action' },
-      { title: 'last run', key: 'last_run_at' },
-      { title: 'Actions', key: 'actions'},
+      { title: 'type', key: 'type' },
+      { title: 'engine', key: 'engine' },
+      { title: 'engine_V', key: 'engine_version' },
+      { title: 'api', key: 'api' },
+      { title: 'api_status', key: 'api_status' },
     ],
     desserts: [],
     editedIndex: -1,
@@ -144,7 +144,7 @@ export default {
   methods: {
     async getData() {
       this.overlay = true;
-      const res = await fetch('api/batch');
+      const res = await fetch('api/config/list');
       const finalRes = await res.json();
       this.listItems = finalRes;
       console.log(this.listItems);
@@ -165,6 +165,7 @@ export default {
       console.log(item);
       this.$router.push('/batch/' + item.batch_uuid);
     },
+
 
     go2newBatch() {
       this.$router.push('/batchnew');

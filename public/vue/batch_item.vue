@@ -4,6 +4,11 @@
       return {
 
         overlay: false,
+
+        snackbar: false,
+        txtSnackbar : '',
+
+
         batch_info: [],
         batch_jobs: [],
         batch_item: {},
@@ -81,52 +86,79 @@
         this.overlay = false;
       },
 
-    handleDelete()  {}, 
+    async handleDelete()  {
+      console.log('handleDelete');
+      console.log(this.batch_item.batch_uuid);
+
+      const requestOptions = {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+      };
+      const res = await fetch("/api/batch/" + this.batch_item.batch_uuid,  requestOptions );
+
+
+      this.txtSnackbar = 'Batch deleted ! ' + this.batch_item.batch_uuid ;
+      this.snackbar = true;
+      
+    }, 
 
     showJob(item) {
       console.log(item);
       this.$router.push('/job/' + item.id);
     },
 
-    handleRun() {
+    async handleRun() {
             // POST request using fetch with error handling
 
-        console.log(this.files_selected);
-        console.log(this.engines_selected);
-        console.log(this.action_selected);
-
-        const ops = {
-          action_selected : this.action_selected,
-          engines_selected : this.engines_selected,
-          files_selected : this.files_selected,
-        };
-
+          
+        console.log('handleRun');
+        console.log(this.batch_item);
+        console.log(this.batch_item.batch_uuid);
+        
         const obj = {
-            batch_uuid:  this.batch_id,
-            batch_description : this.batch_id,
-            batch_action: 'CHECK_CONFIG',
-            batch_options: JSON.stringify(ops)
+           "BATCH_UUID" : this.batch_item.batch_uuid
         };
 
         console.log(obj);
 
-            const requestOptions = {
+        const requestOptions = {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(obj)
-            };
+        };
 
-            fetch('/api/batch', requestOptions)
-                .then(async response => {
+        this.overlay = true;
+        try {
+          const response = await fetch('/api/qmgr', requestOptions);
+          if (!response.ok) {
+            throw new Error('Errore nel recuperare i dati');
+          }
+          const jsonData = await response.json();
+          console.log(jsonData);
+           this.txtSnackbar = jsonData.message ;
+           this.snackbar = true;
+      
+          } catch (err) {
+            console.error(err.message);
+            this.txtSnackbar = err.message ;
+            this.snackbar = true;
+            // this.error = err.message;
+          } finally {
+            this.overlay = false;
+          }
+
+        }
+    
+    /*
+        fetch('/api/qmgr', requestOptions)
+          .then(async response => {
                 const data = await response.json();
-
                 // check for error response
                 if (!response.ok) {
                     // get error message from body or default to response status
                     const error = (data && data.message) || response.status;
                     return Promise.reject(error);
                 }
-
                 console.log(data);
 
                 
@@ -135,8 +167,12 @@
                 this.errorMessage = error;
                 console.error('There was an error!', error);
                 });
-            },
+                
+      },
+
+      */
     },    
+
     mounted() {
       
       const route = VueRouter.useRoute();
@@ -197,12 +233,13 @@
 
     <v-row justify="center">
       <v-col cols="12" md="6" sm="6">
-        <v-btn  color="success" @click="handleRun"  size="x-large" block>Elimina</v-btn>
+        <v-btn  color="success" @click="handleDelete"  size="x-large" block>Elimina</v-btn>
       </v-col>
 
       <v-col cols="12" md="6" sm="6">
-        <v-btn color="error"  @click="handleDelete" size="x-large" block>Esegui</v-btn>
+        <v-btn color="error"  @click="handleRun" size="x-large" block>Esegui</v-btn>
       </v-col>
+
     </v-row>
 
 
@@ -248,7 +285,19 @@ class="align-center justify-center"
 ></v-progress-circular>
 </v-overlay>
 
-
+<v-snackbar v-model="snackbar">
+      {{ txtSnackbar }}
+      <template v-slot:actions>
+        <v-btn
+          color="blue"
+          variant="text"
+          :timeout="3000"
+          @click="snackbar = false"
+        >
+          Close
+        </v-btn>
+      </template>
+</v-snackbar>
 
 
 </template>

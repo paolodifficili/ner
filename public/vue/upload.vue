@@ -3,6 +3,10 @@
     data() {
       return {
         dialog: false,
+        dialogInfo : {
+          title : '___TITOLO___',
+          text : '___TESTO____',
+        },
         power: 0,
         files: [],
         listItems: []
@@ -18,6 +22,11 @@
       uploadBar() {
         console.log(this.power);
         this.power = this.power + 10;
+      },
+
+      showDialog() {
+        this.dialogInfo.title = "MARIO!!!!!!!!";
+        this.dialog = true;
       },
 
       uploadFile() {
@@ -42,6 +51,9 @@
         upload.on('error', (err) => {
             console.error('💥 🙀', err.detail);
             console.log(err, true, new Date());
+            this.dialogInfo.title = "Upload error";
+            this.dialogInfo.text = err.message;
+            this.dialog = true;
         });
 
         upload.on('progress', (progress) => {
@@ -55,6 +67,8 @@
         upload.on('success', (msg) => {
             console.log(msg);
             console.log("Upload success!");
+            this.dialogInfo.title = "Upload status";
+            this.dialogInfo.text = "Upload success!";
             this.dialog = true;
         });
         
@@ -69,12 +83,12 @@
 <template>
 
 <v-toolbar  color="blue-grey"  dark  flat>
-<v-toolbar-title>Upload file (chunk)</v-toolbar-title>
+<v-toolbar-title>Upload file (chunk) - MAX 20MB</v-toolbar-title>
 </v-toolbar>
 
 <v-sheet class="mx-auto">
 
-<v-file-input clearable id="picker" label="File input" v-model="files"></v-file-input>
+<v-file-input clearable id="picker" show-size label="File input" v-model="files"></v-file-input>
 
 <v-btn  block color="primary" elevation="8" size="large" @click="uploadFile">Upload</v-btn>
 
@@ -93,9 +107,11 @@ color="blue-grey" height="20" v-model="power">
       <v-card
         max-width="400"
         prepend-icon="mdi-update"
-        text="Upload complete."
-        title="Upload complete."
+        :text="dialogInfo.text"
+        :title="dialogInfo.title"
       >
+
+      
         <template v-slot:actions>
           <v-btn
             class="ms-auto"
