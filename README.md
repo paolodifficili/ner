@@ -13,14 +13,47 @@ php artisan migrate
 
 # Struttura del lavoro su file system
 
-- Upload - OK!
-- Conversione / Batch / Motori
-- Generazione Output risultato
+# Flusso di lavoro
+
+## Creazione di un batch [RUN, CHECK]
+
+### Batch di CHECK_CONFIG
+
+CREATE Viene generato un batch di check che al "RUN" esegue le chiamate 
+per tutti gli engines configurati alla url api_status in GET per 
+controllare se sono attivi.
 
 
-- /UUID/Source si trovano il pdf e la conversione in testo
-- /UUID/TAG-NER si trovano gli output dei vari motori di ricerca
-- /UUID/Ouput si trova al combinazione dei vari output gli output dei vari motori di ricerca
+### Batch di RUN_ENGINE
+
+Viene creato un Batch con queste opzioni:
+Engine da usare Spacy, HF, Ollama ecc. ecc.
+File da lavorare 1) PDF (poi tanti) già caricato (UPLOAD)
+
+Quando il batch viene creato la cartella,
+
+storage\app\NER_BATCH\BATCH_XXXXXXXXX
+
+nella cartella 
+
+storage\app\NER_BATCH\BATCH_XXXXXXXXX\INPUT
+
+viene salvato il file in input ed automaticamente
+vengono avviati contro questo file tutti i converter
+attivi dal pdf viene subito estratto il testo
+
+nella cartelle storage\app\NER_BATCH\BATCH_XXXXXXXXX\WORK_LOAD
+
+Preparazione dei dati 
+
+- Estrazione METADATI
+- Eliminazione Stop Words
+- Preparazione Prompt per LLM
+- Preparazione File di Input
+
+Un file di input per ogni motore di analisi a eseguire con ApiJob
+
+
 
 # CONFIG su tabella DB
 
@@ -30,6 +63,7 @@ engine_version : info
 api : 
 api_status : da richiamare per una verifica del funzionamento (ner,coverter,folder) 
 api_service : per utilizzare il servizio
+prompt : per LLM
 
 CheckConfigJob esegue un test della configurazione
 
@@ -64,13 +98,23 @@ D:\PROGETTI\LARAVEL>ner_app\php artisan queue:work
     . cancellazione dei dati
  
 - Esecuzione dei valori
--
+
+# ApiJob::dispatch($job_id);
+
+La logica è un JOB base di una chiamata rest GENERICA dove si passano tutti i parametri per effettuare
+
+- method
+- url
+- file / body ecc.
+- viene salvata la risposta
 
 
 # https://github.com/paolodifficili/ner.git
 
 # CLONE TO GITHUB
 
+
+dumpmysql
 git add .
 git commit -m "%DATE%-%TIME%"
 git push -u -f origin master
@@ -81,23 +125,7 @@ php artisan make:migration create_TABLENAME_table
 php artisan migrate
 
 
----
 
-Creazione di un batch
-
-- Creazione di una cartella (NER_BATCH/$batch_id)
-- Inserimento di tutti i file di lavoro
-- Una sotto cartella per il lavoro e preparazione
-
-ApiJob da options riceve tutte le indicazioni 
-    method, 
-    contentType
-    input (fileId/name)
-    output (fileId/name)
-    per interagire con un servizio api
-
-
-FileJob
 
 
 # Fpdi composer install laravel  - composer require setasign/fpdi

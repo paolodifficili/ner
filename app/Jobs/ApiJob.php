@@ -90,6 +90,8 @@ class ApiJob implements ShouldQueue
 
         Log::debug('ApiJob:options:', [$options] );
         Log::debug('ApiJob:fileInput:', [$options->fileInput] );
+        Log::debug('ApiJob:fileOutput:', [$options->fileOutput] );
+        Log::debug('ApiJob:contentType:', [$options->contentType] );
         Log::debug('ApiJob:headers:', [$options->headers] );
         Log::debug('ApiJob:method:', [$options->method] );
 
@@ -100,40 +102,37 @@ class ApiJob implements ShouldQueue
         $coda->last_run_at = Carbon::now();
         $coda->save();
 
-                  
-        // CALL URL
-        // Log::debug('ApiJob:check_url:', [$status_url] );
-        // $response = Http::withOptions(['verify' => false])->get($status_url);
-        // Log::debug('ApiJob:response:status check', [$response->status()] );
-
-        // Salvare lo stato del check ...
-
-        // Get file content
-        // $codaFile = CodaFile::findOrFail($options->fileInput);
-        // $codaFile = CodaFile::findOrFail($options->fileInput);
-        Log::debug('ApiJob:PUT_url:FILE INPUT!', [$options->fileInput] );
         
-        
-        Log::debug('ApiJob:api_url:PUT:', [$api_url] );
-
+        Log::debug('ApiJob:api:', [$api_url] );
 
 
         try {
+
+            if($options->method == "POST") {
+
+                $response = Http::withBody(
+                    Storage::get($options->fileInput), $options->contentType
+                )->post($api_url);    
+                Log::debug('ApiJob:api_url:SAVE_POST:', [$options->fileOutput] );
+                Storage::write($options->fileOutput, $response->body());
+
+            }
 
             if($options->method == "PUT") {
                 $response = Http::withBody(
                     Storage::get($options->fileInput), 'application/pdf'
                 )->put($api_url);    
-                Log::debug('ApiJob:api_url:save2:', [$options->fileOutput] );
+                Log::debug('ApiJob:api_url:SAVE_PUT:', [$options->fileOutput] );
                 Storage::write($options->fileOutput, $response->body());
             }
 
             if($options->method == "GET") {
                 $response = Http::get($api_url, []);
+                Log::debug('ApiJob:api_url:NOT_SAVE_GET:', [] );
             }
  
             $statusCode = $response->status();
-            Log::debug('ApiJob:response:api:', [$response->status()] );
+            Log::debug('ApiJob:response:', [$response->status()] );
             
     
             $coda->status = 200;

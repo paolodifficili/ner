@@ -24,6 +24,7 @@ class CodaConfig extends Model
         'status',
         'status_description',
         'description',
+        'options',
     ];
 
 }

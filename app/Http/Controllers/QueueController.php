@@ -205,7 +205,7 @@ class QueueController extends Controller
         }
 
         // Esegue per ogni file attiva un JOB di conversione 
-        Log::channel('stack')->info('QueueController:convesione???:',[]);
+        Log::channel('stack')->info('QueueController:TODOTODOconvesione???:',[]);
 
         foreach($f2conv as $f1) {
             Log::debug('QueueController:convert:', [$f1] );
@@ -229,7 +229,7 @@ class QueueController extends Controller
                 $job_id['status_url'] = $c->api_status;
 
                 $options = [
-                    'method' => 'PUT',
+                    'method' => 'PUT', //
                     'headers' => [
                         'application/pdf'
                     ],
@@ -381,7 +381,7 @@ class QueueController extends Controller
 
                 // $bo->engines_selected;
 
-                $status_action = 'Batch TEST_ACTION submitted';
+                $status_action = 'Batch RUN_ENGINE submitted';
                 $out = [
                     'message' => $status_action
                 ];
@@ -441,7 +441,7 @@ class QueueController extends Controller
                 }
 
                 $out = [
-                    'message' => 'all Job submitted!'
+                    'message' => 'CHECK_CONFIG :: all Job submitted!'
                 ];
 
 
