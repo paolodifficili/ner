@@ -2,6 +2,13 @@
   export default {
     data() {
       return {
+
+        dialog: false,
+        dialogInfo : {
+          title : '___TITOLO___',
+          text : '___TESTO____',
+        },
+
         overlay: false,
         snackbar: false,
         txtSnackbar : '',
@@ -19,6 +26,18 @@
       }
     },
     methods: {
+
+      showDialog() {
+        this.dialogInfo.title = "MARIO!!!!!!!!";
+        this.dialog = true;
+      },
+
+      goToBatch() {
+        console.log('gotoBatch');
+        console.log(this.batch_id);
+        this.dialog = false;
+        this.$router.push('/batch/' + this.batch_id);
+      },
 
       async loadData() {
 
@@ -97,6 +116,10 @@
                 }
 
                 console.log(data);
+                console.log(data.data.batch_uuid);
+
+                this.batch_id = data.data.batch_uuid;
+
                 this.overlay = false;
                 this.txtSnackbar = 'Batch saved!';
                 this.snackbar = true;
@@ -172,6 +195,8 @@ persistent-hint
 
 <v-btn block color="primary" elevation="8" size="large" @click="handleSubmit"> CREATE NEW BATCH </v-btn>
 
+<v-btn block color="primary" elevation="8" size="large" @click="showDialog"> SHOW </v-btn>
+
 <v-overlay
 :model-value="overlay"
 class="align-center justify-center"
@@ -195,6 +220,32 @@ class="align-center justify-center"
         </v-btn>
       </template>
 </v-snackbar>
+
+
+ <v-dialog  v-model="dialog"  width="auto" >
+      <v-card
+        max-width="400"
+        prepend-icon="mdi-update"
+        :text="dialogInfo.text"
+        :title="dialogInfo.title"
+      >
+
+      
+        <template v-slot:actions>
+          <v-btn
+            class="ms-auto"
+            text="Ok"
+            @click="dialog = false"
+          ></v-btn>
+
+          <v-btn @click="goToBatch()">
+            Disagree
+          </v-btn>
+
+          
+        </template>
+      </v-card>
+    </v-dialog>
 
 
 <pre>{{ action_selected }}</pre>

@@ -88,12 +88,15 @@ class ApiJob implements ShouldQueue
 
         $options = json_decode($this->jobInfo['options']);
 
+        // Set default for a 
+
         Log::debug('ApiJob:options:', [$options] );
-        Log::debug('ApiJob:fileInput:', [$options->fileInput] );
-        Log::debug('ApiJob:fileOutput:', [$options->fileOutput] );
-        Log::debug('ApiJob:contentType:', [$options->contentType] );
-        Log::debug('ApiJob:headers:', [$options->headers] );
-        Log::debug('ApiJob:method:', [$options->method] );
+        Log::debug('ApiJob:fileInput:', [$options->fileInput ?? false] );
+        Log::debug('ApiJob:fileOutput:', [$options->fileOutput ?? false] );
+        Log::debug('ApiJob:contentType:', [$options->contentType ?? false] );
+        Log::debug('ApiJob:headers:', [$options->headers ?? false] );
+        Log::debug('ApiJob:method:', [$options->method ?? false] );
+        Log::debug('ApiJob:dryRun:', [$options->dryRun ?? false] );
 
         // $url = "https://dummy.restapiexample.com/api/v1/employee/1";
         $status_url = $this->jobInfo['status_url'];
@@ -101,10 +104,19 @@ class ApiJob implements ShouldQueue
 
         $coda->last_run_at = Carbon::now();
         $coda->save();
-
         
         Log::debug('ApiJob:api:', [$api_url] );
 
+        // save a fake output and exit
+        if($options->dryRun ?? false) {
+
+            Log::info('ApiJob:#####DRY_RUN######:', [] );
+            Storage::write($options->fileOutput, 'DRY_RUN');
+            $coda->status = 200;
+            $coda->save();
+            return;
+
+        }
 
         try {
 

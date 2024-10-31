@@ -3,6 +3,8 @@
     data() {
       return {
 
+
+        batch_id : '',
         overlay: false,
 
         snackbar: false,
@@ -29,10 +31,10 @@
       async getData(id) {
 
         this.overlay = true;  
-        const route = VueRouter.useRoute();
+        // const route = VueRouter.useRoute();
 
-        console.log(route.params.id)
-        const res = await fetch("/api/batch/" + route.params.id );
+        console.log(id)
+        const res = await fetch("/api/batch/" + id );
         const finalRes = await res.json();
         
         this.batch_jobs = finalRes.batch_jobs;
@@ -85,6 +87,12 @@
 
         this.overlay = false;
       },
+
+    handleReload() {
+      console.log('Reload!');
+      console.log(this.batch_id);
+      this.getData(this.batch_id);
+    },
 
     async handleDelete()  {
       console.log('handleDelete');
@@ -176,8 +184,9 @@
     mounted() {
       
       const route = VueRouter.useRoute();
-      console.log(route.params.id)
-      this.getData(route.params.id)
+      console.log(route.params.id);
+      this.batch_id = route.params.id;
+      this.getData(this.batch_id);
       
     }
   }
@@ -232,12 +241,16 @@
 
 
     <v-row justify="center">
-      <v-col cols="12" md="6" sm="6">
+      <v-col cols="12" md="4" sm="4">
         <v-btn  color="success" @click="handleDelete"  size="x-large" block>Elimina</v-btn>
       </v-col>
 
-      <v-col cols="12" md="6" sm="6">
+      <v-col cols="12" md="4" sm="4">
         <v-btn color="error"  @click="handleRun" size="x-large" block>Esegui</v-btn>
+      </v-col>
+
+     <v-col cols="12" md="4" sm="4">
+        <v-btn color="warning"  @click="handleReload" size="x-large" block>Ricarica</v-btn>
       </v-col>
 
     </v-row>
@@ -253,6 +266,40 @@
     <v-toolbar-title>Jobs list</v-toolbar-title>
 </v-toolbar>
 
+
+ <v-list lines="two">
+      <v-list-subheader inset>Jobs</v-list-subheader>
+
+      <v-list-item
+        v-for="folder in reducedData"
+        :key="folder.id "
+        :subtitle="`api: ${folder.api_url} status: ${folder.status_url}`"
+        :title="`${folder.type} - ${folder.engine}  - ${folder.status} - (${folder.last_run_at})`"
+      >
+        <template v-slot:prepend>
+
+        <v-btn 
+        class="m-a-10"
+        :color="(folder.status != 200) ? 'red' : 'green'"
+        
+        @click="showJob(folder)">{{folder.id}}</v-btn>
+ 
+        </template>
+
+        {{folder.status_description}}
+
+      </v-list-item>
+  </v-list>
+
+<v-toolbar
+    color="blue-grey"
+    dark
+    flat
+ >
+    <v-toolbar-title>Jobs table</v-toolbar-title>
+</v-toolbar>
+
+
 <v-data-table :items="reducedData">
 
       <template v-slot:item.status="{ item }">
@@ -267,7 +314,10 @@
       </template>
 
       <template v-slot:item.id="{ item }">
-        <v-btn color="primary" @click="showJob(item)">{{item.id}}</v-btn>
+        <v-btn 
+        :color="(item.status != 200) ? 'red' : 'green'"
+        
+        @click="showJob(item)">{{item.id}}</v-btn>
       </template>
 
 </v-data-table>

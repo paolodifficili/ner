@@ -142,7 +142,8 @@ class QueueController extends Controller
             ];
     
         } else {
-            $batch = CodaBatch::all();
+            // $batch = CodaBatch::all();
+            $batch = CodaBatch::orderBy('id','desc')->get();
             $jobs = [];
             $out = $batch;
         }
@@ -360,6 +361,7 @@ class QueueController extends Controller
         $batch = CodaBatch::where(['batch_uuid' => $batch_uuid])->firstOrFail();
 
         $QMGR_ACTION = $batch->batch_action;
+        
         Log::channel('stack')->info('QueueController:mgrBatch:ACTION', [$QMGR_ACTION] );
         
         

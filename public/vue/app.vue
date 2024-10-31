@@ -6,8 +6,6 @@
 <v-spacer></v-spacer>
 <RouterLink to="/"><v-btn>Home</v-btn></RouterLink>
 <RouterLink to="/upload"><v-btn>Upload</v-btn></RouterLink>
-<RouterLink to="/lista"><v-btn>List</v-btn></RouterLink>
-<RouterLink to="/table"><v-btn>Table</v-btn></RouterLink>
 <RouterLink to="/batch"><v-btn>Batch</v-btn></RouterLink>
 <RouterLink to="/batchnew"><v-btn>Batch new</v-btn></RouterLink>
 

@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <title>Vue Mgr</title>
+    <title>Mgr</title>
     <link rel='stylesheet'  href='https://cdn.jsdelivr.net/npm/vuetify@3.7.1/dist/vuetify.min.css' type='text/css' />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@mdi/font@latest/css/materialdesignicons.min.css">
     <script src="https://unpkg.com/vue@latest"></script>

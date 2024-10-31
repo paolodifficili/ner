@@ -108,6 +108,7 @@ class MuxController extends Controller
             
             $filePath = $uploadFolder . "/" . $uuid;
             $fileDest = $uploadFolder . "/" . $uuid . "/" . $fileName;
+
             Log::info('MuxController write merge & clean :', [$fileDest] );
             
             $chunk_list = Storage::files($uploadFolder . "/" . $uuid);
@@ -149,13 +150,16 @@ class MuxController extends Controller
 
             Log::channel('stack')->info('MuxController RBUILDED!:', [$fname]);
 
+            $size = Storage::size($fname);
+            $mime = Storage::mimeType($fname);
 
             // Update file list
 
             $info = [
                 'file_uuid' => $uuid,
                 'file_name' => $fileName,
-                'file_size' => '',
+                'file_size' => $size,
+                'file_mime' => $mime,
                 'file_path' => $filePath,
                 'file_extension' => '',
                 'file_root_path' => $uploadFolder

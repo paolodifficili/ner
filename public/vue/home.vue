@@ -3,6 +3,13 @@
 <template>
 
 
+<v-toolbar
+    color="blue-grey"
+    dark
+    flat
+ >
+    <v-toolbar-title>Mgr .. </v-toolbar-title>
+</v-toolbar>
 
 
 
@@ -49,16 +56,16 @@
       <v-card class="mx-auto" title="File list">
         <v-card-text>Manage uploaded files</v-card-text>
         <v-card-actions>
-          <v-btn  size="large" variant="outlined">File list</v-btn>
+          <v-btn  @click="goToFile" size="large" variant="outlined">File list</v-btn>
         </v-card-actions>
       </v-card>
     </v-col>
 
     <v-col cols="12" md="6">
       <v-card class="mx-auto" title="File list">
-        <v-card-text>Manage uploaded files</v-card-text>
+        <v-card-text>---- ----- --- </v-card-text>
         <v-card-actions>
-          <v-btn  size="large" variant="outlined">File list</v-btn>
+          <v-btn  size="large" variant="outlined">--- ----</v-btn>
         </v-card-actions>
       </v-card>
     </v-col>
@@ -103,6 +110,7 @@ methods: {
   goToConfig() {  console.log('goToConfig');  this.$router.push('/config') },
   goToBatch() {  console.log('goToBatch');  this.$router.push('/batch') },
   goToNewBatch() {  console.log('batchnew');  this.$router.push('/batchnew') },
+  goToFile() {  console.log('goToFile');  this.$router.push('/file') },
 },
 
 };

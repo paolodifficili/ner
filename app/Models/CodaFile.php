@@ -18,6 +18,7 @@ class CodaFile extends Model
         'file_size',
         'file_path',
         'file_extension',
+        'file_mime',
         'file_root_path',
         'info',
         'status',

@@ -13,6 +13,19 @@ php artisan migrate
 
 # Struttura del lavoro su file system
 
+
+Una sezione del Toolkit è interamente dedicata alla mappatura del percorso ideale di un progetto per l’adozione dell’IA nel settore pubblico. Le sei tappe dovrebbero essere:
+- inquadramento del problema
+- progettazione
+- prototipazione
+- sperimentazione
+- implementazione
+- monitoraggio
+
+Un monito per tutte le organizzazioni del settore pubblico che vogliono iniziare a usare l’IA troppo frettolosamente: 
+saltare qualcuno di questi passaggi - oltre a porre problemi di conformità normativa - 
+potrebbe determinare il fallimento del progetto.
+
 # Flusso di lavoro
 
 ## Creazione di un batch [RUN, CHECK]
@@ -30,19 +43,41 @@ Viene creato un Batch con queste opzioni:
 Engine da usare Spacy, HF, Ollama ecc. ecc.
 File da lavorare 1) PDF (poi tanti) già caricato (UPLOAD)
 
+
+00_File input (PDF sources) copia dei file durante la creazione
+-- BATCH --
+
+
+01_Converter (java, python) : text output JOB + di uno ed anche a pagine ed di diverso tipo (per un file esegue la conversione)
+
+
+02_Cleaner (stop words, ecc.) : text output JOB (data la conversione ripulisce il test)
+i file vengono ripuliti con un cleaner
+
+
+
+
+04_Analyzer (search PII) : json output JOB
+
+
+
+
+05_Report : report JOB
+
+
 Quando il batch viene creato la cartella,
 
 storage\app\NER_BATCH\BATCH_XXXXXXXXX
 
 nella cartella 
 
-storage\app\NER_BATCH\BATCH_XXXXXXXXX\INPUT
+storage\app\NER_BATCH\BATCH_XXXXXXXXX\00_INPUT
 
 viene salvato il file in input ed automaticamente
 vengono avviati contro questo file tutti i converter
-attivi dal pdf viene subito estratto il testo
+attivi dal pdf viene subito estratto il testo in 01_CONVERTER
 
-nella cartelle storage\app\NER_BATCH\BATCH_XXXXXXXXX\WORK_LOAD
+nella cartelle storage\app\NER_BATCH\BATCH_XXXXXXXXX\02_LOAD
 
 Preparazione dei dati 
 
@@ -114,7 +149,7 @@ La logica è un JOB base di una chiamata rest GENERICA dove si passano tutti i p
 # CLONE TO GITHUB
 
 
-dumpmysql
+dumpmysql (già avviatp)
 git add .
 git commit -m "%DATE%-%TIME%"
 git push -u -f origin master
