@@ -112,6 +112,12 @@ class QueueController extends Controller
                 "id" => "RUN_ENGINE",
                 "value" => "RUN_ENGINE",
             ],
+
+            [
+                "id" => "DRY_RUN",
+                "value" => "DRY_RUN",
+            ],
+
         ];
         $codaJson = json_encode($coda);
 

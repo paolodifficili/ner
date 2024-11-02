@@ -22,6 +22,7 @@ return new class extends Migration
             $table->string('file')->nullable();
             $table->string('type')->nullable();
             $table->string('engine')->nullable();
+            $table->string('engine_version')->nullable();
             $table->string('info')->nullable();
             $table->string('status')->nullable();
             $table->string('email')->nullable();

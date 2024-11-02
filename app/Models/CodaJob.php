@@ -20,6 +20,7 @@ class CodaJob extends Model
         'info',
         'type',
         'engine',
+        'engine_version',
         'status',
         'status_description',
         'description',

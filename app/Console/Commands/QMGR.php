@@ -19,6 +19,7 @@ use Illuminate\Support\Facades\Config;
 use App\Jobs\SpacyJob;
 use App\Jobs\NerJob;
 use App\Jobs\ApiJob;
+use App\Jobs\ApiJobFolder;
 use App\Jobs\CheckConfigJob;
 
 use App\Models\CodaBatch;
@@ -105,12 +106,94 @@ class QMGR extends Command
 
         switch ($cmd_par1) {
 
+            case "WK_FILE":
+
+                $batch_uuid = "BATCH_2024_10_12_09_42_09";
+                $fileFolderIn = "NER_BATCH/" . $batch_uuid . "//00_INPUT/";
+                $fileFolderOut = "NER_BATCH/" . $batch_uuid . "//01_CONVERTER/";
+                $engine = 'ollama';
+                $engine_version = 'phi3';
+
+                $files = Storage::files($fileFolderIn);
+                Log::channel('stack')->info($files);
+                foreach($files as $fname)
+                {
+                    Log::debug('fileName:', [$fname] );
+                    $path_parts = pathinfo($fname);
+                    Log::channel('stack')->info($path_parts);
+
+                    $fileOut = $fileFolderOut . "/" . $path_parts['filename'] . "-" . $engine . '-' . $engine_version . ".txt";
+                    Log::debug($fileOut);
+                }
+                
+
+
+                break;
+
+
+            
+            case "WK_JOB_FOLDER":
+
+                $batch_uuid = "BATCH_2024_10_12_09_42_09";
+                $fileFolderIn = "NER_BATCH/" . $batch_uuid . "//00_INPUT/";
+                $fileFolderOut = "NER_BATCH/" . $batch_uuid . "//01_CONVERTER/";
+                $dryRun = false;
+                $engines = CodaConfig::where(['type' => 'converter'])->get();
+
+                // per ogni motore di tipo engine esegue l'azione
+                foreach($engines as $c)
+                {
+                    Log::debug('engine:', [$c] );
+                    Log::debug('engine:options', [$c->options] );
+        
+                    # $fileOut = $fileFolderOut . "/" . $path_parts['filename'] . "-" . $c->engine . "-" . $c->engine_version . ".txt";
+                    # Log::debug('fileOut:', [$fileOut] );
+        
+                    $options = json_decode($c->options);
+                    Log::debug('engine:options:', [$options] );
+                                
+                    $batch_id = $batch_uuid;
+        
+                    // Prepara il JOB
+                    
+                    $job_id = [];
+                    $job_id['description'] = 'API';
+                    $job_id['type'] = $c->type;
+                    $job_id['engine'] = $c->engine;
+                    $job_id['engine_version'] = $c->engine_version;
+                    $job_id['batch_uuid'] = $batch_id;
+                    $job_id['api_url'] = $c->api;
+                    $job_id['status_url'] = $c->api_status;
+                                
+            
+                    $options = [
+                        'dryRun' => $dryRun,
+                        'method' => $options->method, //
+                        'contentType' => 'text/plain',
+                        'headers' => [
+                            'application/pdf'
+                        ],
+                        'fileInput' => $fileFolderIn,
+                        'fileOutput' => $fileFolderOut,
+                    ];
+                    $job_id['options'] = json_encode($options);
+
+        
+                    Log::channel('stack')->debug('WK_JOB_FOLDER:job_id', [$job_id]);
+                
+                    ApiJobFolder::dispatch($job_id);
+
+                }
+
+                break;
+
+
+
             case "WK_BATCH" :
 
                 // simula l'esecuzione di un batch completo (solo converter)
                 // Precarica il file nella cartella e crea la prima cartella 
 
-                
 
                 $batch_uuid = "BATCH_2024_10_12_09_42_09";
                 Log::channel('stack')->info('WK_BATCH:batch_uuid:', [$batch_uuid] );
@@ -121,25 +204,31 @@ class QMGR extends Command
                 
                 Log::channel('stack')->info('WK_BATCH:ACTION', [$QMGR_ACTION] );
 
+                $dryRun_converter = false; // esegue una finta chiamata per verificare la struttura delle cartelle
+                $dryRun_cleaner = false; // esegue una finta chiamata per verificare la struttura delle cartelle
+                $dryRun_analyzer = false; // esegue una finta chiamata per verificare la struttura delle cartelle
+
                 $batch_config = [
                     [
                         'engineType' => 'converter',
                         'fileFolderIn' => "NER_BATCH/" . $batch_uuid . "//00_INPUT/",
                         'fileFolderOut' => "NER_BATCH/" . $batch_uuid . "//01_CONVERTER/",
-                        'dryRun' => true
+                        'dryRun' => $dryRun_converter
                     ],
                     [
                         'engineType' => 'cleaner',
                         'fileFolderIn' => "NER_BATCH/" . $batch_uuid . "//01_CONVERTER/",
                         'fileFolderOut' => "NER_BATCH/" . $batch_uuid . "//02_CLEANER/",
-                        'dryRun' => true
+                        'dryRun' => $dryRun_cleaner
                     ],
                     [
                         'engineType' => 'analyzer',
                         'fileFolderIn' => "NER_BATCH/" . $batch_uuid . "//02_CLEANER/",
                         'fileFolderOut' => "NER_BATCH/" . $batch_uuid . "//03_ANALYZER/",
-                        'dryRun' => true
+                        'dryRun' => $dryRun_analyzer
                     ],
+
+                    // TODO REPORT action ....
 
                 ];
 /*
@@ -150,8 +239,13 @@ class QMGR extends Command
                 $folder_04 = "NER_BATCH/" . $batch_uuid . "//04_REPORT/";
 */
 
+                // array che contengono i job da generare ATTENZIONE si devono attendere la fine dei job precedenti
+                // per gli input dei successivi ....
+
                 $job_converter_list = [];
                 $job_cleaner_list = [];
+                $job_analyzer_list = [];
+                $job_report_list = [];
 
                 $job_list = [];
 
@@ -204,6 +298,7 @@ class QMGR extends Command
                                     $job_id['description'] = 'API';
                                     $job_id['type'] = $c->type;
                                     $job_id['engine'] = $c->engine;
+                                    $job_id['engine_version'] = $c->engine_version;
                                     $job_id['batch_uuid'] = $batch_id;
                                     $job_id['api_url'] = $c->api;
                                     $job_id['status_url'] = $c->api_status;
@@ -232,69 +327,6 @@ class QMGR extends Command
 
                             }
                         }
-
-
-                        /*
-                        
-
-                        // per ogni file esegue tutti i motori di conversione
-                        foreach($files as $fname)
-                        {
-                            Log::debug('Converte:', [$fname] );
-                            $path_parts = pathinfo($fname);
-                            Log::debug('Path:', [$path_parts] );
-                            
-                            foreach($allConv as $c)
-                            {
-                                Log::debug('engine:', [$c->engine] );
-                                Log::debug('engine:options', [$c->options] );
-        
-                                $fileOut = $folder_01 . "/" . $path_parts['filename'] . "-" . $c->engine . ".txt";
-                                Log::debug('fileOut:', [$fileOut] );
-        
-                                $options = json_decode($c->options);
-        
-                                Log::debug('engine:options:', [$options] );
-                                
-                                $batch_id = $batch_uuid;
-        
-                                // Prepara il JOB
-            
-                                $job_id = [];
-                                $job_id['description'] = 'API';
-                                $job_id['type'] = $c->type;
-                                $job_id['engine'] = $c->engine;
-                                $job_id['id'] = 'JOB_AAA-BBB-CCCC';
-                                $job_id['batch_uuid'] = $batch_id;
-                                $job_id['api_url'] = $c->api;
-                                $job_id['status_url'] = $c->api_status;
-                                
-            
-                                $options = [
-                                    'dryRun' => true,
-                                    'method' => $options->method, //
-                                    'contentType' => 'text/plain',
-                                    'headers' => [
-                                        'application/pdf'
-                                    ],
-                                    'fileInput' => $fname,
-                                    'fileOutput' => $fileOut,
-                                ];
-                                $job_id['options'] = json_encode($options);
-             
-                                Log::channel('stack')->debug('WK_BATCH:job_id', [$job_id]);
-            
-                                $job_converter_list[] = new ApiJob($job_id);
-        
-                                Log::channel('stack')->debug('QMGR add Job to queue', [$job_id]);
-        
-                            }
-        
-                        }
-                        Log::channel('stack')->info('**FINE**CONVERTER **', []);
-
-                        */
-
 
         
                     break;
@@ -334,89 +366,6 @@ class QMGR extends Command
                 Log::channel('stack')->info('WK_BATCH:id:', [$batch->id] );
 
 
-                /*
-
-
-                $allConv = CodaConfig::where(['type' => 'converter'])->get();
-
-                $fname = "WK_BACTH.txt";
-                Log::debug('Converte:', [$fname] );
-
-                $path_parts = pathinfo($fname);
-                Log::debug('Path:', [$path_parts] );
-
-
-                $jobList = []; // contiene la lista dei job da avviare
-
-                foreach($allConv as $c)
-                {
-                    Log::debug('engine:', [$c->engine] );
-                    Log::debug('engine:options', [$c->options] );
-                    
-                    $fileOut = $folder_wl . "/" . $path_parts['filename'] . "-" . $c->engine . ".txt";
-                 
-                    Log::debug('fileOut:', [$fileOut] );
-
-                    $options = json_decode($c->options);
-
-                    Log::debug(':options:', [$options] );
-                    
-                    $batch_id = $batch_uuid;
-
-                    // Prepara il JOB
-
-                    $job_id = [];
-                    $job_id['description'] = 'API';
-                    $job_id['type'] = $c->type;
-                    $job_id['engine'] = $c->engine;
-                    $job_id['id'] = 'JOB_AAA-BBB-CCCC';
-                    $job_id['batch_uuid'] = $batch_id;
-                    $job_id['api_url'] = $c->api;
-                    $job_id['status_url'] = $c->api_status;
-
-                    $options = [
-                        'method' => $options->method, //
-                        'contentType' => 'text/plain',
-                        'headers' => [
-                            'application/pdf'
-                        ],
-                        'fileInput' => $fname,
-                        'fileOutput' => $fileOut,
-                    ];
-                    $job_id['options'] = json_encode($options);
- 
-                    Log::channel('stack')->debug('@@@@@@@QMGR add API Job to list', [$job_id]);
-                    $job_list[] = new ApiJob($job_id);
-                    // ApiJob::dispatch($job_id);
-                    // Log::channel('stack')->debug('QMGR add Job to queue', [$job_id]);
-                }
-*/
-
-                // new ApiJob($job_id);
-                // new ImportCsv(1, 100),
-
-/*
-                $batch = Bus::batch([
-                    $job_converter_list, 
-                    $job_cleaner_list ...
-                    ])->before(function (Batch $batch) {
-                    Log::channel('stack')->info('*****WK_BATCH:before:', [$batch->id] );
-                    // The batch has been created but no jobs have been added...
-                })->progress(function (Batch $batch) {
-                    Log::channel('stack')->info('*****WK_BATCH:progress:', [$batch->id] );
-                })->then(function (Batch $batch) {
-                    Log::channel('stack')->info('*****WK_BATCH:then:', [$batch->id] );
-                })->catch(function (Batch $batch, Throwable $e) {
-                    Log::channel('stack')->info('*****WK_BATCH:error:', [$batch->id, $e->getMessage()] );
-                })->finally(function (Batch $batch) {
-                    Log::channel('stack')->info('*****WK_BATCH:finally:', [$batch->id] );
-                })->dispatch();
-                
-                
-                Log::channel('stack')->info('WK_BATCH:id:', [$batch->id] );
-
-*/
-                
                 
 
 
