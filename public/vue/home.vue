@@ -62,10 +62,10 @@
     </v-col>
 
     <v-col cols="12" md="6">
-      <v-card class="mx-auto" title="File list">
-        <v-card-text>---- ----- --- </v-card-text>
+      <v-card class="mx-auto" title="Message!">
+        <v-card-text>Create Message</v-card-text>
         <v-card-actions>
-          <v-btn  size="large" variant="outlined">--- ----</v-btn>
+          <v-btn  @click="createMessage" size="large" variant="outlined">Create message</v-btn>
         </v-card-actions>
       </v-card>
     </v-col>
@@ -83,6 +83,19 @@
 </div>
 
 
+<h1>Channel</h1>
+
+<div
+    x-init="
+        Echo.channel('chat')
+            .listen('Example', (event) => {
+                console.log(event)
+            })
+    "
+>
+</div>
+
+
 
 </template>
 
@@ -95,7 +108,17 @@ data() {
 },
 
 mounted() {
-  console.log('Vue Main Component mounted');
+  console.log('home.vue mounted');
+
+/*
+  console.log('home.vue init Echo on GotMessage');
+  window.Echo.channel('chat')
+    .listen('GotMessage', (e) => {
+      console.log('------------------- Home Vue GotMessage----------------');
+      console.log(e);
+  });
+*/
+
 },
 
 methods: {
@@ -111,6 +134,16 @@ methods: {
   goToBatch() {  console.log('goToBatch');  this.$router.push('/batch') },
   goToNewBatch() {  console.log('batchnew');  this.$router.push('/batchnew') },
   goToFile() {  console.log('goToFile');  this.$router.push('/file') },
+
+  async createMessage() {  
+      console.log('home.vue: createMessage....');  
+      const res1 = await fetch("api/bc");
+      let file_list = await res1.json();
+      console.log('home.vue: createMessage:response');
+      console.log(file_list);
+      
+  },
+
 },
 
 };

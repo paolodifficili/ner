@@ -1,5 +1,7 @@
+
 const { createApp } = Vue;
 const { loadModule } = window['vue3-sfc-loader'];
+
 
 const options = {
   moduleCache: {
@@ -51,8 +53,59 @@ const { createVuetify } = Vuetify
 const vuetify = createVuetify()
 
 
+console.log('INIT axios');
+
+window.axios = axios;
+window.axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
+
+
+console.log('INIT Reverb Push');
+
+/*
+REVERB_APP_ID=my-app-id
+REVERB_APP_KEY=my-app-key
+REVERB_APP_SECRET=my-app-secret
+REVERB_HOST=localhost
+REVERB_PORT=7888
+REVERB_SCHEME=http
+
+
+VITE_REVERB_APP_KEY="${REVERB_APP_KEY}"
+VITE_REVERB_HOST="${REVERB_HOST}"
+VITE_REVERB_PORT="${REVERB_PORT}"
+VITE_REVERB_SCHEME="${REVERB_SCHEME}"
+
+
+*/
+
+console.log(window.location.hostname);
+
+window.Pusher = Pusher;
+
+window.Echo = new Echo({
+  broadcaster: 'reverb',
+  key: 'my-app-key',
+  wsHost: window.location.hostname,
+  wsPort: 7888,
+  wssPort: 7888,
+  forceTLS: false,
+  enabledTransports: ['ws', 'wss'],
+  disableStats: true,
+})
+
+console.log(window.Echo);
+
+/*
+window.Echo.channel('chat')
+  .listen('GotMessage', (e) => {
+    console.log('------------------- GotMessage----------------');
+    console.log(e);
+});
+*/
+
+
 const app = createApp(
-    Vue.defineAsyncComponent(() =>   loadModule('./vue/app.vue', options)  ),
+  Vue.defineAsyncComponent(() =>   loadModule('./vue/app.vue', options)  ),
 )
 .use(router)
 .use(vuetify)

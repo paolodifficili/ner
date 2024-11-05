@@ -13,12 +13,18 @@ use App\Models\CodaBatch;
 use App\Models\CodaConfig;
 use App\Models\CodaFile;
 
+use Illuminate\Http\JsonResponse;
+
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Broadcast;
 
 use App\Http\Requests\StoreBatchRequest;
 
 use App\Jobs\CheckConfigJob;
 use App\Jobs\ApiJob;
+use App\Jobs\SendMessage;
+
+use App\Events\GotMessage;
 
 use Faker\Factory as Faker;
 use Carbon\Carbon;
@@ -32,6 +38,38 @@ class QueueController extends Controller
     /**
      * Display a listing of the resource.
      */
+
+    public function broadcastMessage(Request $request): JsonResponse {
+
+        Log::channel('stack')->info('QueueController:broadcast GotMessage:', [] );
+                
+        broadcast(new GotMessage([]))->toOthers();
+        
+        
+        return response()->json([
+            'success' => true,
+            'message' => "Message broadcasted!.",
+        ]);
+
+    }
+
+    // Crea il job che esegue la notifica
+    public function createMessage(Request $request): JsonResponse {
+
+        Log::channel('stack')->info('QueueController:createMessage:', [] );
+        
+        $message = [
+            'user_id' => 'USER_ID',
+            'text' => 'TEXT_MESSAGE!',
+        ];
+
+        SendMessage::dispatch($message);
+
+        return response()->json([
+            'success' => true,
+            'message' => "Message created and job dispatched.",
+        ]);
+    }
 
     public function submitCheckConfig()
     {

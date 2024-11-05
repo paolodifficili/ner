@@ -9,9 +9,17 @@
 <RouterLink to="/batch"><v-btn>Batch</v-btn></RouterLink>
 <RouterLink to="/batchnew"><v-btn>Batch new</v-btn></RouterLink>
 
-<RouterLink to="/crud2">
-<v-icon>mdi-heart</v-icon>
-</RouterLink>
+<v-btn stacked>
+      <v-badge
+        :content="counter"
+        color="error"
+      >
+        <v-icon icon="mdi-newspaper-variant-outline"></v-icon>
+      </v-badge>
+ 
+</v-btn>
+
+
 
 <v-btn
   :prepend-icon="theme === 'light' ? 'mdi-weather-sunny' : 'mdi-weather-night'"
@@ -37,9 +45,24 @@
   import { ref } from 'vue'
 
   const theme = ref('light')
+  const counter = ref(0);
+
+
+  var messages = [];
+  var cntMessages = 1;
 
   function onClick () {
     theme.value = theme.value === 'light' ? 'dark' : 'light'
   }
+
+  console.log('app.vue initi GotMessage')
+  window.Echo.channel('chat')
+    .listen('GotMessage', (e) => {
+      console.log('app.vue GotMessage');
+      console.log(e);
+      counter.value++;
+  });
+
+
 </script>
 

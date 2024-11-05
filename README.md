@@ -10,6 +10,8 @@ php artisan route:list
 php artisan make:queue-table
 php artisan migrate
 
+php artisan queue:work
+
 
 # Struttura del lavoro su file system
 
@@ -149,7 +151,8 @@ La logica è un JOB base di una chiamata rest GENERICA dove si passano tutti i p
 # CLONE TO GITHUB
 
 
-dumpmysql (già avviatp)
+dumpmysql (già avviato)
+
 git add .
 git commit -m "%DATE%-%TIME%"
 git push -u -f origin master

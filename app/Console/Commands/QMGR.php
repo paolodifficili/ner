@@ -188,7 +188,6 @@ class QMGR extends Command
                 break;
 
 
-
             case "WK_BATCH" :
 
                 // simula l'esecuzione di un batch completo (solo converter)
@@ -204,9 +203,9 @@ class QMGR extends Command
                 
                 Log::channel('stack')->info('WK_BATCH:ACTION', [$QMGR_ACTION] );
 
-                $dryRun_converter = false; // esegue una finta chiamata per verificare la struttura delle cartelle
-                $dryRun_cleaner = false; // esegue una finta chiamata per verificare la struttura delle cartelle
-                $dryRun_analyzer = false; // esegue una finta chiamata per verificare la struttura delle cartelle
+                $dryRun_converter = true; // esegue una finta chiamata per verificare la struttura delle cartelle
+                $dryRun_cleaner = true; // esegue una finta chiamata per verificare la struttura delle cartelle
+                $dryRun_analyzer = true; // esegue una finta chiamata per verificare la struttura delle cartelle
 
                 $batch_config = [
                     [
@@ -271,59 +270,51 @@ class QMGR extends Command
                             Log::debug('##################   Build Job for', [$b_c['engineType'] , $b_c] );
                             
                             $job_list[$b_c['engineType']] = [];
-                            $files = Storage::files($b_c['fileFolderIn']);
+                            # $files = Storage::files($b_c['fileFolderIn']);
                             $engines = CodaConfig::where(['type' => $b_c['engineType']])->get();
                             
-                            foreach($files as $fname)
-                            {
-                                Log::debug('fileName:', [$fname] );
-                                $path_parts = pathinfo($fname);
                             
-                                foreach($engines as $c)
-                                {
-                                    Log::debug('engine:', [$c] );
-                                    Log::debug('engine:options', [$c->options] );
-        
-                                    $fileOut = $b_c['fileFolderOut'] . "/" . $path_parts['filename'] . "-" . $c->engine . ".txt";
-                                    Log::debug('fileOut:', [$fileOut] );
-        
-                                    $options = json_decode($c->options);
-                                    Log::debug('engine:options:', [$options] );
+                            foreach($engines as $c)
+                            {
+                                Log::debug('engine:', [$c] );
+                                Log::debug('engine:options', [$c->options] );
+   
+    
+                                $options = json_decode($c->options);
+                                Log::debug('engine:options:', [$options] );
+                            
+                                $batch_id = $batch_uuid;
+    
+                                // Prepara il JOB
                                 
-                                    $batch_id = $batch_uuid;
-        
-                                    // Prepara il JOB
-                                    
-                                    $job_id = [];
-                                    $job_id['description'] = 'API';
-                                    $job_id['type'] = $c->type;
-                                    $job_id['engine'] = $c->engine;
-                                    $job_id['engine_version'] = $c->engine_version;
-                                    $job_id['batch_uuid'] = $batch_id;
-                                    $job_id['api_url'] = $c->api;
-                                    $job_id['status_url'] = $c->api_status;
+                                $job_id = [];
+                                $job_id['description'] = 'API';
+                                $job_id['type'] = $c->type;
+                                $job_id['engine'] = $c->engine;
+                                $job_id['engine_version'] = $c->engine_version;
+                                $job_id['batch_uuid'] = $batch_id;
+                                $job_id['api_url'] = $c->api;
+                                $job_id['status_url'] = $c->api_status;
                                 
             
-                                    $options = [
-                                        'dryRun' => $b_c['dryRun'],
-                                        'method' => $options->method, //
-                                        'contentType' => 'text/plain',
-                                        'headers' => [
-                                            'application/pdf'
-                                        ],
-                                        'fileInput' => $fname,
-                                        'fileOutput' => $fileOut,
-                                    ];
+                                $options = [
+                                    'dryRun' => $b_c['dryRun'],
+                                    'method' => $options->method, //
+                                    'contentType' => 'text/plain',
+                                    'headers' => [
+                                        'application/pdf'
+                                    ],
+                                    'fileInput' => $b_c['fileFolderIn'],
+                                    'fileOutput' => $b_c['fileFolderOut'],
+                                ];
 
-                                    $job_id['options'] = json_encode($options);
+                                $job_id['options'] = json_encode($options);
                 
-                                    Log::channel('stack')->debug('WK_BATCH:job_id', [$job_id]);
+                                Log::channel('stack')->debug('WK_BATCH:job_id', [$job_id]);
                 
-                                    $job_list[$b_c['engineType']][] = new ApiJob($job_id);
+                                $job_list[$b_c['engineType']][] = new ApiJobFolder($job_id);
             
-                                    Log::channel('stack')->debug('QMGR add Job to queue', [$b_c['engineType'], $job_id]);
-            
-                                }
+                                Log::channel('stack')->debug('QMGR add Job to queue', [$b_c['engineType'], $job_id]);
 
                             }
                         }

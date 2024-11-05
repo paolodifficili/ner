@@ -20,6 +20,10 @@ Route::options($uri, $callback);
 
 */
 
+Route::get('/message', [QueueController::class, 'createMessage']);
+
+Route::get('/bc', [QueueController::class, 'broadcastMessage']);
+
 Route::get('/coda/show', [QueueController::class, 'showCoda']);
 
 Route::get('/upload/list', [QueueController::class, 'showUploadFileList']);
