@@ -27,9 +27,16 @@ use Carbon\Carbon;
 ApiJobFolder
 
 come parametri prende un Engine e tutte le sue configurazioni per la chiamata ed una cartella
-Per ogni file della cartella esegue tante chiamate ed produce tante risposte denominate
+
+Per ogni file della cartella esegue tante chiamate API ed produce tante risposte denominate
 
 fileInput + engine + engine_version . txt ecc.
+
+Inoltre il file che viene preso in input viene pre-elaborato e post-elaborato con due parametri
+
+preAction
+postAction
+
 
 
 */
@@ -106,6 +113,8 @@ class ApiJobFolder implements ShouldQueue
         Log::debug('ApiJobFolder:headers:', [$options->headers ?? false] );
         Log::debug('ApiJobFolder:method:', [$options->method ?? false] );
         Log::debug('ApiJobFolder:dryRun:', [$options->dryRun ?? false] );
+        Log::debug('ApiJobFolder:preAction:', [$options->preAction ?? false] );
+        Log::debug('ApiJobFolder:postAction:', [$options->postAction ?? false] );
 
         // $url = "https://dummy.restapiexample.com/api/v1/employee/1";
         $status_url = $this->jobInfo['status_url'];
@@ -123,7 +132,7 @@ class ApiJobFolder implements ShouldQueue
         foreach($files as $fname)
         {
 
-            Log::debug('ApiJobFolder:CALL!-----------------------:',[]);
+            Log::debug('ApiJobFolder:CALL!----START-------------------:',[]);
 
             $engine = $this->jobInfo['engine'];
             $engine_version = $this->jobInfo['engine_version'];
@@ -137,6 +146,10 @@ class ApiJobFolder implements ShouldQueue
             $fileOut = $fileFolderOut . "/" . $path_parts['filename'] . "-" . $engine . '-' . $engine_version . ".txt";
             
             Log::debug('ApiJobFolder:fileOut:',[$fileOut]);
+
+            $fileJIN = $fileFolderOut . "/" . $path_parts['filename'] . "-" . $engine . '-' . $engine_version . "_IN.json";
+            $fileJOUT = $fileFolderOut . "/" . $path_parts['filename'] . "-" . $engine . '-' . $engine_version . "_OUT.json";
+
 
             $coda = CodaJob::firstOrCreate([
                 'job_uuid' => $this->job->uuid(),
@@ -170,60 +183,80 @@ class ApiJobFolder implements ShouldQueue
         
                 try {
 
-                    Log::debug('ApiJobFolder:RUN method:', [$options->method] );
+                    Log::debug('ApiJobFolder:method:', [$options->method] );
                     Log::debug('ApiJobFolder:api:', [$api_url] );
                     Log::debug('ApiJobFolder:fileIn:', [$fileIn] );
                     Log::debug('ApiJobFolder:fileOut:', [$fileOut] );
 
+                    Log::debug('ApiJobFolder:preAction:', [$options->preAction ?? false] );
+                    Log::debug('ApiJobFolder:postAction:', [$options->postAction ?? false] );
+
+                    $content2analyze = Storage::get($fileIn);
+                    
+
+                    // Esegue il wrapper 
+                    if ($options->preAction) {
+                        $content2analyze = $this->dataWrapper($content2analyze, $options->preAction, $options );
+                    }
+                    Storage::write($fileJIN, $content2analyze);
+
+
                     $statusCode = 123;
                     $statusDescription = 'Success!';
+                    $statusBody = '';
 
                     if($options->method == "POST") {
-                        $response = Http::withBody(
-                            Storage::get($fileIn), $options->contentType
-                        )->post($api_url);    
-                        Log::debug('ApiJobFolder:POST:', [$fileOut] );
-                        Storage::write($fileOut, $response->body());
+
+                        $response = Http::withBody( $content2analyze, $options->contentType )->post($api_url);    
+                        // Log::debug('ApiJobFolder:POST:', [$fileOut] );
+                        // Storage::write($fileOut, $response->body());
+                        $statusBody = $response->body(); 
                         $statusCode = $response->status();
                     } elseif ($options->method == "POST_FORM") {
                         
                         $response = Http::attach(
                             'file', // Nome del parametro file nella richiesta
-                            Storage::get($fileIn), // Contenuto del file
+                            $content2analyze, // Contenuto del file
                             'GDPR_PARTE_1.pdf' // Nome del file inviato
                         )
                         ->post($api_url);
-                        
-                        /*
-                        $response = Http::asForm()->post($api_url, [
-                            'file' => Storage::get($fileIn),
-                        ]);
-                        */
 
-
-                        Log::debug('ApiJobFolder:POST_FORM:', [$fileOut] );
-                        Storage::write($fileOut, $response->body());
+                        $statusBody = $response->body(); 
                         $statusCode = $response->status();
                     } elseif ($options->method == "PUT") {
                         $response = Http::withBody(
-                            Storage::get($fileIn), 'application/pdf'
+                            $content2analyze, 'application/pdf'
                         )->put($api_url);    
+                        $statusBody = $response->body(); 
                         $statusCode = $response->status();
-                        Log::debug('ApiJobFolder:PUT:', [$fileOut] );
-                        Storage::write($fileOut, $response->body());
                     } elseif ($options->method == "GET") {
                         $response = Http::get($api_url, []);
-                        Log::debug('ApiJobFolder:api_url:NOT_SAVE_GET:', [] );
+                        $statusBody = $response->body(); 
                         $statusCode = $response->status();
                     } else {
+                        $statusBody = 'METHOD! NOT! FOUND!'; 
                         $statusCode = 998;
                         $statusDescription = 'METHOD! NOT! FOUND!';
                         Log::error('ApiJobFolder:METHOD! NOT! FOUND!:', [$response->status()] );
-                    
                     }
+
+
+                    Storage::write($fileJOUT, $statusBody);
+
+                    if ($options->postAction) {
+                        $statusBody = $this->dataWrapper($statusBody, $options->postAction, $options );
+                    } 
+                    
+                    Storage::write($fileOut, $statusBody);
+
+
                     $coda->status = $statusCode;
                     $coda->status_description = $statusDescription; 
                     $coda->save(); 
+
+
+                    // wrapper out
+
                              
                 }
         
@@ -257,5 +290,63 @@ class ApiJobFolder implements ShouldQueue
         Log::error('ApiJobFolder!failed!', [$this->jobInfo, $exception] );
     }
 
+
+    public function dataWrapper($content, $action, $options)
+    {
+
+        Log::debug('ApiJobFolder:dataWrapper:action', [$action] );
+        Log::debug('ApiJobFolder:dataWrapper:options', [$options] );
+        Log::debug('ApiJobFolder:dataWrapper:content', [$content] );
+
+        $newContent = $content;
+       
+        if ($action === "ollamaIN") {
+
+            $promptTxt = $options->promptTxt;
+            $promptTag = $options->promptTag;
+            $model = $options->model;
+
+            Log::debug('ApiJobFolder:dataWrapper:promptTxt', [$promptTxt] );
+            Log::debug('ApiJobFolder:dataWrapper:promptTag', [$promptTag] );
+            Log::debug('ApiJobFolder:dataWrapper:model', [$model] );
+
+            /*
+                    {
+                    "model": "llama3.2",
+                    "prompt": "Why is the sky blue?",
+                    "stream": false
+                    }'
+            */
+            
+            // str_replace("world", "Peter", "Hello world!"); // Outputs: Hello Peter!
+            $prompt = str_replace($promptTag, $content, $promptTxt);
+            Log::debug('ApiJobFolder:dataWrapper:PROMPT!', [$newContent] );
+
+            $data = [];
+            $data['model'] = $model;
+            $data['prompt'] = $prompt;
+            $data['stream'] = false;
+
+            $newContent =  json_encode($data);
+            Log::error('ApiJobFolder:dataWrapper:PROMPT!', [$newContent] );
+            
+            
+
+        } elseif ( $action === "ollamaOUT" ) {
+
+            Log::debug('ApiJobFolder:dataWrapper:ollamaOUT:', [$content] );
+            $jd =  json_decode($newContent);
+            Log::debug('ApiJobFolder:dataWrapper:ollamaOUT:', [$jd] );
+            Log::debug('ApiJobFolder:dataWrapper:ollamaOUT:', [$jd->response] );
+
+            $newContent = $jd->response;
+
+        
+        } else {
+            Log::error('ApiJobFolder:dataWrapper:ACTION NOT FOUND!', [$action] );
+        }
+
+        return $newContent;
+    }
 
 }

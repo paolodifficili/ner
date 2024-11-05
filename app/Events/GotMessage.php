@@ -19,14 +19,18 @@ class GotMessage implements ShouldBroadcastNow
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
     public string $message = 'HEY!!!';
+    public string $status = 'HEY!!!';
+    public string $action = 'HEY!!!';
 
 
     /**
      * Create a new event instance.
      */
-    public function __construct()
+    public function __construct($m)
     {
-        //
+        $this->message = $m['message'];
+        $this->status = $m['status'];
+        $this->action = $m['action'];
     }
 
     /**

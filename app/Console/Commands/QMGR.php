@@ -135,22 +135,32 @@ class QMGR extends Command
             case "WK_JOB_FOLDER":
 
                 $batch_uuid = "BATCH_2024_10_12_09_42_09";
-                $fileFolderIn = "NER_BATCH/" . $batch_uuid . "//00_INPUT/";
-                $fileFolderOut = "NER_BATCH/" . $batch_uuid . "//01_CONVERTER/";
+                $fileFolderIn = "NER_BATCH/" . $batch_uuid . "//02_CLEANER/";
+                $fileFolderOut = "NER_BATCH/" . $batch_uuid . "//03_ANALYZER/";
                 $dryRun = false;
-                $engines = CodaConfig::where(['type' => 'converter'])->get();
+                $engines = CodaConfig::where(['type' => 'analyzer'])->get();
 
                 // per ogni motore di tipo engine esegue l'azione
+
                 foreach($engines as $c)
                 {
                     Log::debug('engine:', [$c] );
+
+                    // dd($c->options);
+
                     Log::debug('engine:options', [$c->options] );
         
                     # $fileOut = $fileFolderOut . "/" . $path_parts['filename'] . "-" . $c->engine . "-" . $c->engine_version . ".txt";
                     # Log::debug('fileOut:', [$fileOut] );
         
-                    $options = json_decode($c->options);
-                    Log::debug('engine:options:', [$options] );
+                    // dd($c->options);
+
+                    $eng_options = json_decode($c->options);
+
+                    Log::debug('engine:options:', [$eng_options] );
+                    Log::debug('engine:options:', [$eng_options->method ] );
+                    
+                    // dd($eng_options);
                                 
                     $batch_id = $batch_uuid;
         
@@ -168,14 +178,20 @@ class QMGR extends Command
             
                     $options = [
                         'dryRun' => $dryRun,
-                        'method' => $options->method, //
+                        'method' => $eng_options->method, 
                         'contentType' => 'text/plain',
                         'headers' => [
                             'application/pdf'
                         ],
+                        'preAction' => $eng_options->preAction ?? false,
+                        'postAction' => $eng_options->postAction ?? false,
+                        'promptTxt' => $eng_options->promptTxt ?? false,
+                        'promptTag' => $eng_options->promptTag ?? false,
+                        'model' => $eng_options->model ?? false,
                         'fileInput' => $fileFolderIn,
                         'fileOutput' => $fileFolderOut,
                     ];
+
                     $job_id['options'] = json_encode($options);
 
         

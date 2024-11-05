@@ -50,19 +50,14 @@ File da lavorare 1) PDF (poi tanti) già caricato (UPLOAD)
 -- BATCH --
 
 
-01_Converter (java, python) : text output JOB + di uno ed anche a pagine ed di diverso tipo (per un file esegue la conversione)
+01_Converter/d (java, python) : text output JOB + di uno ed anche a pagine ed di diverso tipo (per un file esegue la conversione) risultato della conversione da PDF -> testo
 
 
-02_Cleaner (stop words, ecc.) : text output JOB (data la conversione ripulisce il test)
-i file vengono ripuliti con un cleaner
+02_Cleaner/d (stop words, ecc.) : text output JOB (data la conversione ripulisce il test)
+i file vengono ripuliti con un cleaner. Il risultato della pulizia
 
 
-
-
-04_Analyzer (search PII) : json output JOB
-
-
-
+04_Analyzer/d (search PII) : il risultato delle analisi
 
 05_Report : report JOB
 

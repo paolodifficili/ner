@@ -42,8 +42,14 @@ class QueueController extends Controller
     public function broadcastMessage(Request $request): JsonResponse {
 
         Log::channel('stack')->info('QueueController:broadcast GotMessage:', [] );
-                
-        broadcast(new GotMessage([]))->toOthers();
+
+        $msg = "MSG_AT_" . Carbon::now();
+
+        broadcast(new GotMessage([
+            'action' => 'demo_action',
+            'status' => 'ok',
+            'message' => $msg,
+        ]))->toOthers();
         
         
         return response()->json([
