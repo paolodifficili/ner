@@ -70,7 +70,8 @@ class ApiJob implements ShouldQueue
     {
 
         Log::debug('ApiJob:START:', [$this->job->uuid() ] );
-        $this->jobInfo['__UUID__'] = $this->job->uuid();
+
+        // $this->jobInfo['__UUID__'] = $this->job->uuid();
 
         Log::debug('ApiJob:info:', [$this->jobInfo] );
 
@@ -89,6 +90,7 @@ class ApiJob implements ShouldQueue
         $options = json_decode($this->jobInfo['options']);
 
         // Set default for a 
+        Log::debug('ApiJob:batch_uuid:', [ $this->jobInfo['batch_uuid'] ] );
 
         Log::debug('ApiJob:options:', [$options] );
         Log::debug('ApiJob:fileInput:', [$options->fileInput ?? false] );

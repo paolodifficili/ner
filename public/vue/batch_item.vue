@@ -276,16 +276,17 @@
         :subtitle="`api: ${folder.api_url} status: ${folder.status_url}`"
         :title="`${folder.type} - ${folder.engine}  - ${folder.status} - (${folder.last_run_at})`"
       >
-        <template v-slot:prepend>
 
-        <v-btn 
-        class="m-a-10"
-        :color="(folder.status != 200) ? 'red' : 'green'"
-        
-        @click="showJob(folder)">{{folder.id}}</v-btn>
- 
+        <template v-slot:prepend>
+          <v-avatar color="grey-lighten-1">
+            <v-icon 
+            @click="showJob(folder)"
+            :color="(folder.status != 200) ? 'red' : 'green'">mdi-check-circle</v-icon>
+          </v-avatar>
+      
         </template>
 
+    
         {{folder.status_description}}
 
       </v-list-item>

@@ -31,6 +31,18 @@
 
 </v-app-bar>
 
+
+
+
+  <v-main>
+    <v-container fluid>
+      <RouterView />
+    </v-container>
+  </v-main>
+
+
+</v-app>
+
 <div class="text-center pa-4">
     <v-btn @click="dialog = true">
       Open Dialog
@@ -51,8 +63,8 @@
       <v-list-item
         v-for="n in messages"
         :key="n"
-        :title="'['+ n.status + '@' + n.message + n.action "
-        :subtitle="n.message"
+        :title="n.message"
+        :subtitle="n.status + ' ' + n.action "
       ></v-list-item>
       </v-list>
 
@@ -62,16 +74,9 @@
         </template>
       </v-card>
     </v-dialog>
-  </div>
+</div>
 
 
-
-  <v-main>
-    <v-container fluid>
-      <RouterView />
-    </v-container>
-  </v-main>
-</v-app>
 
 </v-responsive>
 

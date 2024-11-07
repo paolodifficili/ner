@@ -8,6 +8,10 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
+use Illuminate\Bus\Batch;
+use Illuminate\Support\Facades\Bus;
+
+
 use App\Models\CodaJob;
 use App\Models\CodaBatch;
 use App\Models\CodaConfig;
@@ -210,6 +214,8 @@ class QueueController extends Controller
         // return $codaJson;
     }
 
+
+
     // Salva un nuovo batch
     public function storeBatch(StoreBatchRequest $request)
     {
@@ -228,7 +234,6 @@ class QueueController extends Controller
 
         Log::channel('stack')->info('QueueController:storeBatch:', [$cb] );
 
-
         // Create la cartella di lavoro corrispondente
         $batch_folder = "NER_BATCH/" . $request->batch_uuid;
         Storage::makeDirectory($batch_folder);
@@ -239,61 +244,57 @@ class QueueController extends Controller
 
         $f2conv = [];
 
-        foreach($ops->files_selected as $fId) {
-            Log::channel('stack')->info('QueueController:fId:', [$fId] );
-            $f = CodaFile::find($fId);
+        // se vi sono file selezionati dalla lista
+        if ( $ops->files_selected ?? false ) {
 
-            Log::channel('stack')->info('QueueController:f:', [$f] );
+            foreach($ops->files_selected as $fId) {
+                Log::channel('stack')->info('QueueController:fId:', [$fId] );
+                $f = CodaFile::find($fId);
+    
+                Log::channel('stack')->info('QueueController:f:', [$f] );
+    
+                $oldFile = $f->file_path . "/" . $f->file_name;
+                $newFile = $batch_folder . "/00_INPUT/" . $f->file_name;
+    
+                Log::channel('stack')->info('QueueController:copy:', [$oldFile, $newFile] );
+    
+                Storage::copy($oldFile, $newFile);
+    
+                $f2conv[] = $newFile;
+            }
 
-            $oldFile = $f->file_path . "/" . $f->file_name;
-            $newFile = $batch_folder . "/INPUT/" . $f->file_name;
-
-            Log::channel('stack')->info('QueueController:copy:', [$oldFile, $newFile] );
-
-            Storage::copy($oldFile, $newFile);
-
-            $f2conv[] = $newFile;
         }
+
+        // se è usato uuid del file
+        if ( $ops->files_uuid ?? false ) {
+
+            foreach($ops->files_uuid as $fId) {
+
+                Log::channel('stack')->info('QueueController:fId:', [$fId] );
+
+                $f = CodaFile::where(['file_uuid' => $fId])->firstOrFail();
+                    
+                Log::channel('stack')->info('QueueController:f:', [$f] );
+    
+                $oldFile = $f->file_path . "/" . $f->file_name;
+                $newFile = $batch_folder . "/00_INPUT/" . $f->file_name;
+    
+                Log::channel('stack')->info('QueueController:copy:', [$oldFile, $newFile] );
+    
+                Storage::copy($oldFile, $newFile);
+    
+                $f2conv[] = $newFile;
+            }
+
+            
+        }
+
+        
 
         // Esegue per ogni file attiva un JOB di conversione 
-        Log::channel('stack')->info('QueueController:TODOTODOconvesione???:',[]);
+        // Log::channel('stack')->info('QueueController:TODOTODOconvesione???:',[]);
 
-        foreach($f2conv as $f1) {
-            Log::debug('QueueController:convert:', [$f1] );
-            $allConv = CodaConfig::where(['type' => 'converter'])->get();
-            foreach($allConv as $c)
-            {
-                Log::debug('QueueController:convert:engine:', [$c->engine] );
-
-                $batch_id = $request->batch_uuid;
-
-                $job_id = [];
-                $job_id['description'] = 'API';
-                // $job_id['type'] = $faker->randomElement(['convert','hf','spacy']);
-                $job_id['type'] = $c->type;
-                $job_id['engine'] = $c->engine;
-                // $job_id['id'] = $faker->numberBetween($min = 1, $max = 2000);
-                // $job_id['id'] = $faker->uuid();
-                $job_id['id'] = 'JOB_AAA-BBB-CCCC';
-                $job_id['batch_uuid'] = $batch_id;
-                $job_id['api_url'] = $c->api;
-                $job_id['status_url'] = $c->api_status;
-
-                $options = [
-                    'method' => 'PUT', //
-                    'headers' => [
-                        'application/pdf'
-                    ],
-                    'fileInput' => $f1,
-                    'fileOutput' => $f1 . ".txt",
-                ];
-                $job_id['options'] = json_encode($options);
- 
-                Log::channel('stack')->info('QMGR add API Job to queue', [$job_id]);
-
-                ApiJob::dispatch($job_id);
-            }
-        }
+       
               
         $resp = [
             'success' => true,
@@ -406,6 +407,7 @@ class QueueController extends Controller
         $out = [];
 
         $batch_uuid = $request->input('BATCH_UUID');
+
         Log::channel('stack')->info('QueueController:mgrBatch:', [$batch_uuid] );
 
         $batch = CodaBatch::where(['batch_uuid' => $batch_uuid])->firstOrFail();
@@ -452,14 +454,17 @@ class QueueController extends Controller
                 Log::debug('QueueController:mgrBatch:', ['CHECK_CONFIG'] );
 
                 // $allConv = CodaConfig::where(['type' => 'converter'])->get();
-                $allConv = CodaConfig::all();
+                $allConv = CodaConfig::where(['id' => 44])->get();
+                // $allConv = CodaConfig::all();
+
+                // $batch_id = $request->batch_uuid;
+
                 foreach($allConv as $c)
                 {
                     Log::debug('QueueController:CHECK:engine:', [$c->type ,$c->engine] );
                     // se folder (controlla la scrittura su file ...) TODO
                     if ($c->type != 'folder') {
 
-                        $batch_id = $request->batch_uuid;
 
                         $job_id = [];
                         $job_id['description'] = 'CHECK CONFIG ' . $c->engine;
@@ -487,13 +492,44 @@ class QueueController extends Controller
                 
                         Log::channel('stack')->info('QueueController add API Job to queue', [$job_id]);
                 
-                        ApiJob::dispatch($job_id);
+                        // ApiJob::dispatch($job_id);
+                        $job_list[] = new ApiJob($job_id);
               
                     }
                 }
 
+                $batch = Bus::batch([
+                    $job_list, 
+                    // $job_cleaner_list
+                    ])->before(function (Batch $batch) {
+                    Log::channel('stack')->info('*****WK_BATCH:before:', [$batch->id] );
+                    // The batch has been created but no jobs have been added...
+                })->progress(function (Batch $batch) {
+                    Log::channel('stack')->info('*****WK_BATCH:progress:', [$batch->id] );
+                })->then(function (Batch $batch) {
+                    Log::channel('stack')->info('*****WK_BATCH:then:', [$batch->id] );
+                    // $batch->custom_data = $batch_uuid;
+                })->catch(function (Batch $batch, Throwable $e) {
+                    Log::channel('stack')->info('*****WK_BATCH:error:', [$batch->id, $e->getMessage()] );
+                })->finally(function (Batch $batch) {
+
+                    // dd($batch);
+
+                    Log::channel('stack')->info('*****WK_BATCH:finally:', [$batch->id] );
+                    Log::channel('stack')->info('*****WK_BATCH:finally:', [$batch->name] );
+
+                    $msg = $batch->name . " Completato! ";
+
+                    broadcast(new GotMessage([
+                        'action' => 'CHECK_CONFIG',
+                        'status' => 'ok',
+                        'message' => $msg,
+                    ]))->toOthers();
+
+                })->name($batch_uuid)->dispatch();
+
                 $out = [
-                    'message' => 'CHECK_CONFIG :: all Job submitted!'
+                    'message' => 'CHECK_CONFIG :: all Job submitted : ' . $batch_uuid
                 ];
 
 
