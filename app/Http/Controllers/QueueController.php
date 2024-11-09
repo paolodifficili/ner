@@ -216,7 +216,7 @@ class QueueController extends Controller
 
 
 
-    // Salva un nuovo batch
+    // Crea un nuovo batch con le impostazioni
     public function storeBatch(StoreBatchRequest $request)
     {
 
@@ -265,7 +265,7 @@ class QueueController extends Controller
 
         }
 
-        // se è usato uuid del file
+        // se vi sono file indicati con uuid ---- è usato uuid del file
         if ( $ops->files_uuid ?? false ) {
 
             foreach($ops->files_uuid as $fId) {
@@ -289,12 +289,7 @@ class QueueController extends Controller
             
         }
 
-        
-
-        // Esegue per ogni file attiva un JOB di conversione 
-        // Log::channel('stack')->info('QueueController:TODOTODOconvesione???:',[]);
-
-       
+   
               
         $resp = [
             'success' => true,
@@ -381,10 +376,7 @@ class QueueController extends Controller
 
         **************** MGR **********************
 
-        // Exec batch actions
-        // Submit Jobs
-        // Reset 
-        // Delete
+        // ESEGUE UN BATCH già configurato
 
 
 */

@@ -22,6 +22,12 @@
         this.listItems = finalRes;
       },
 
+      gotoConfig() {
+        console.log('gotoConfig .....');
+      },
+
+   
+
       startBatch () {
         this.addLog('Batch starting .....');
         this.updateLog(2, "Batch started!")
@@ -29,18 +35,35 @@
 
       },
 
-      createBatch() {
+      createBatchConfig()
+      {
+        console.log('createBatchConfig .....');
+        this.createBatch('CHECK_CONFIG', '');
+      },
 
-        console.log('runBatch .....' , this.execBatch);
-        this.addLog('Creating a batch .....');
+      createBatchAnalyze()
+      {
+        console.log('createBatchAnalyze .....');
+        this.createBatch('RUN_ENGINE', this.file_uuid);
+      },
 
+
+      createBatch(action, file_uuid) {
+
+        // action RUN_ENGINE, CHECK_CONFIG
+
+        
+        // da prendere dopo l'upload ...
         this.file_uuid = '1730979689955';
 
         const BATCH_UUID = 'BATCH____' + Date.now();
-        console.log('runBatch .....' , BATCH_UUID);
+
+        this.addItem('BATCH', 'Creating ' + BATCH_UUID + " ... ");
+
+        console.log('runBatch .....' , BATCH_UUID, action, file_uuid);
 
         const ops = {
-          action_selected : 'RUN_ENGINE',
+          action_selected : action,
           engines_selected : [],
           files_selected : [],
           files_uuid : [this.file_uuid]
@@ -49,7 +72,7 @@
         const obj = {
             batch_uuid:  BATCH_UUID,
             batch_description : BATCH_UUID,
-            batch_action: 'RUN_ENGINE',
+            batch_action: action,
             batch_options: JSON.stringify(ops)
         };
 
@@ -70,6 +93,8 @@
                 // get error message from body or default to response status
                 const error = (data && data.message) || response.status;
                 return Promise.reject(error);
+                this.updateItem('BATCH', "Creating Batch error!");
+                this.stopItem('BATCH', "red");
             }
 
               console.log(data);
@@ -77,10 +102,10 @@
 
               this.batch_id = data.data.batch_uuid;
 
-              this.updateLog(1, "Batch created!")
-              this.stopLog(1)
+              this.updateItem('BATCH', 'Creating ' + BATCH_UUID + " succes!");
+              this.stopItem('BATCH', "green");
 
-              this.startBatch()
+              // this.startBatch()
 
             
             
@@ -109,6 +134,11 @@
 
       uploadFile() {
 
+        if(!this.files.name) {
+          alert('Manca il file!');
+          return;
+        }
+
         console.log('uploadFile');
         console.log(this.files.name);
 
@@ -120,8 +150,8 @@
         };
 
         this.resetLog();
-        this.addLog('Caricamento ...');
-
+        this.addItem('UPLOAD', 'Uploading .....');
+        // https://github.com/muxinc/upchunk 
         const upload = UpChunk.createUpload({
           method : 'PUT',
           endpoint: '/api/mux',
@@ -137,21 +167,22 @@
         });
 
         upload.on('error', (err) => {
-            console.error('💥 🙀', err.detail);
+            console.error(err);
             console.log(err, true, new Date());
 
-            this.dialogInfo.title = "Upload error";
-            this.dialogInfo.text = err.message;
-            this.dialog = true;
+            this.updateItem('UPLOAD', 'ERROR!' + err.message);
+            this.stopItem('UPLOAD','red');
+
+            
         });
 
         upload.on('progress', (progress) => {
             console.log(progress);
-            console.log(`So far we've uploaded ${progress.detail}% of this file.`);
+            console.log(`Progress ${progress.detail}% .`);
             // myBar.style.width = progress.detail + "%";
             this.power = Math.floor(progress.detail);
 
-            this.updateLog(0, 'Loading ' + this.power + "%")
+            this.updateItem('UPLOAD', 'Loading ' + this.power + "%")
 
             console.log(this.power);
         });
@@ -160,8 +191,8 @@
             console.log(msg);
             console.log("Upload success!");
 
-            this.updateLog(0, "Upload success!")
-            this.stopLog(0)
+            this.updateItem('UPLOAD',"Upload success!");
+            this.stopItem('UPLOAD','green');
 
             console.log('FileUUID:', this.file_uuid);
 
@@ -169,7 +200,7 @@
             // this.dialogInfo.text = "Upload success!";
             // this.dialog = true;
 
-            this.createBatch();
+            // this.createBatch();
 
         });
         
@@ -185,6 +216,7 @@
     },
 
     stopLog() {
+      console.log('stopLog')
       this.overlay = false
       clearInterval(this.interval)
       this.stopLastItem()
@@ -192,6 +224,63 @@
 
     updateLog(id, text) {
       this.items[id].title = text;
+    },
+
+    addItem(key, text) {
+    // this.stopLastItem()
+    // this.updateLastItem('Done!')
+      console.log('addItem', key, text)
+      this.items.push({
+        key: key,
+        title: text, 
+        color : "green",
+        running: true})
+     },
+
+     stopItem(key, color) {
+
+      console.log('stopItem:', key, color);
+      var index = this.items.findIndex(function(item) {
+        return item.key == key
+      });
+
+      this.items[index].color = color;
+      this.items[index].running = false;
+      
+    },
+
+    stopLastItem() {
+      console.log('stopLastItem:', j);
+      let j = this.items.length
+      if (j > 0 ) {
+        this.items[this.items.length - 1].color = "green";
+        this.items[this.items.length - 1].running = false;
+      }
+      
+    },
+
+    updateItem(key, text) {
+      console.log('updateItem:', key, text)
+      var index = this.items.findIndex(function(item) {
+        return item.key == key
+      });
+
+      this.items[index].title = text;
+      
+
+   },
+
+    updateLastItem(t) {
+      let j = this.items.length
+      if (j > 0 ) {
+        this.items[this.items.length -1].title =  t;
+      }
+      console.log('updateLastItem:', j, t)
+    },
+
+    execListItem(i) {
+      console.log('execListItem .....', i);
+      console.log(this.items[i]);
     },
 
     addLog(text) {
@@ -234,42 +323,69 @@
 
 <template>
 
-<v-toolbar  color="blue-grey"  dark  flat>
-<v-toolbar-title>Upload file (chunk) - MAX 20MB</v-toolbar-title>
-</v-toolbar>
+<v-container class="pa-4" fill-height>
 
-<v-sheet class="mx-auto">
+<!-- Logo e Titolo -->
+
+<div align="center" justify="center">
+
+<v-img
+:width="100"
+src="./vue/logo.png"
+></v-img>
+</div>
+
+
+
+<v-row justify="center" align="center">
+
+  <v-col cols="12" md="8" lg="6">
+
+    <div class="text-center mb-4">
+      <h2 class="font-weight-bold mt-2">Cosa devo analizzare ?</h2>
+    </div>
+  </v-col>
+
+</v-row>
+
+
+
 
 <v-file-input clearable id="picker" show-size label="File input" v-model="files"></v-file-input>
 
-<v-btn  block color="primary" elevation="8" size="large" @click="uploadFile">Upload</v-btn>
-<v-switch v-model="execBatch"
-              color="indigo"
-              label="Run Batch"
-              hide-details
-            ></v-switch>
 
-<v-btn  block color="primary" elevation="8" @click="createBatch">Test</v-btn>
-<v-btn  block color="primary" elevation="8" @click="resetLog">resetLog</v-btn>
-<v-btn  block color="primary" elevation="8" @click="addLog('ccc')">addLog</v-btn>
-<v-btn  block color="primary" elevation="8" @click="stopLog(0)">stopLog(0) </v-btn>
-<v-btn  block color="primary" elevation="8" @click="stopLastLog">stopLastLog</v-btn>
-<v-btn  block color="primary" elevation="8" @click="updateLogRandom(0)">updateLogRandom(0)</v-btn>
-<v-btn  block color="primary" elevation="8" @click="createBatch()">createBatch</v-btn>
+<v-row align="center" justify="center">
 
-<v-divider thickness="10"  inset></v-divider>
+<v-col cols="auto">
+  <v-btn   prepend-icon="mdi-cloud-upload" rounded="xl"  size="large" variant="tonal" @click="uploadFile">
+  <template v-slot:prepend><v-icon color="blue"></v-icon></template>
+    Upload</v-btn>
+</v-col>
 
-<v-progress-linear 
-color="blue-grey" height="20" v-model="power">
-<strong>{{ Math.ceil(power) }}%</strong>
-</v-progress-linear>
-<v-list :items="listItems"></v-list>
-<p>https://github.com/muxinc/upchunk</p>
+<v-col cols="auto">
+  <v-btn  prepend-icon="mdi-delete-forever"  rounded="xl" size="large" variant="tonal" @click="resetLog">
+  <template v-slot:prepend><v-icon color="red"></v-icon></template>
+    Reset</v-btn>
+</v-col>
 
-</v-sheet>
+<v-col cols="auto">
+  <v-btn  prepend-icon="mdi-stop-circle-outline"  rounded="xl" size="large" variant="tonal" @click="createBatchAnalyze">
+  <template v-slot:prepend><v-icon color="green"></v-icon></template>
+    New Batch</v-btn>
+</v-col>
+
+<v-col cols="auto">
+  <v-btn  prepend-icon="mdi-play-circle-outline"  rounded="xl" size="large" variant="tonal" @click="createBatchConfig">
+  <template v-slot:prepend><v-icon color="yellow"></v-icon></template>
+    Config</v-btn>
+</v-col>
+
+</v-row>
+
+
 
  <v-list>
-    <v-list-subheader>REPORTS</v-list-subheader>
+   
 
     <v-list-item
       v-for="(item, i) in items"
@@ -277,6 +393,7 @@ color="blue-grey" height="20" v-model="power">
       :value="item"
       color="primary"
       rounded="xl"
+      @click="execListItem(i)"
     >
     <template v-slot:append v-if="item.running">
        <v-progress-circular
@@ -288,7 +405,7 @@ color="blue-grey" height="20" v-model="power">
       </template>
 
       <template v-slot:append v-if="!item.running">
-      <v-icon :icon="item.icon" :color="item.color"></v-icon>
+      <v-icon icon="mdi-checkbox-marked-outline" :color="item.color"></v-icon>
     </template>
 
     <v-list-item-title v-text="item.title"></v-list-item-title>
@@ -297,23 +414,7 @@ color="blue-grey" height="20" v-model="power">
     <v-divider inset></v-divider>
   </v-list>
 
- <v-dialog  v-model="dialog"  width="auto" >
-      <v-card
-        max-width="400"
-        prepend-icon="mdi-update"
-        :text="dialogInfo.text"
-        :title="dialogInfo.title"
-      >
+</v-container>
 
-      
-        <template v-slot:actions>
-          <v-btn
-            class="ms-auto"
-            text="Ok"
-            @click="dialog = false"
-          ></v-btn>
-        </template>
-      </v-card>
-    </v-dialog>
 
 </template>

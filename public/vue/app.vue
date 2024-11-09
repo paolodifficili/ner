@@ -2,7 +2,7 @@
 <v-responsive class="border rounded">
 <v-app :theme="theme">
 
-<v-app-bar title="Mgr" class="px-3">
+<v-app-bar title="P@D" class="px-3">
 <v-spacer></v-spacer>
 <RouterLink to="/"><v-btn>Home</v-btn></RouterLink>
 <RouterLink to="/upload"><v-btn>Upload</v-btn></RouterLink>
@@ -24,7 +24,7 @@
 
 <v-btn
   :prepend-icon="theme === 'light' ? 'mdi-weather-sunny' : 'mdi-weather-night'"
-  text="TT"
+  text=""
   slim
   @click="onClick"
 ></v-btn>
@@ -89,7 +89,7 @@
 <script setup>
   import { ref } from 'vue'
 
-  const theme = ref('light')
+  const theme = ref('dark')
   const counter = ref(0);
   const isActive = ref(false);
   const messages = ref([]);
