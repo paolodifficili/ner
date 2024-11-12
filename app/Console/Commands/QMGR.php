@@ -109,13 +109,17 @@ class QMGR extends Command
             case "WK_FILE":
 
                 $batch_uuid = "BATCH_2024_10_12_09_42_09";
+                
                 $fileFolderIn = "NER_BATCH/" . $batch_uuid . "//00_INPUT/";
                 $fileFolderOut = "NER_BATCH/" . $batch_uuid . "//01_CONVERTER/";
+
                 $engine = 'ollama';
                 $engine_version = 'phi3';
 
                 $files = Storage::files($fileFolderIn);
+                
                 Log::channel('stack')->info($files);
+
                 foreach($files as $fname)
                 {
                     Log::debug('fileName:', [$fname] );
@@ -127,17 +131,17 @@ class QMGR extends Command
                 }
                 
 
-
                 break;
-
 
             
             case "WK_JOB_FOLDER":
 
                 $batch_uuid = "BATCH_2024_10_12_09_42_09";
+
                 $fileFolderIn = "NER_BATCH/" . $batch_uuid . "//02_CLEANER/";
                 $fileFolderOut = "NER_BATCH/" . $batch_uuid . "//03_ANALYZER/";
                 $dryRun = false;
+
                 $engines = CodaConfig::where(['type' => 'analyzer'])->get();
 
                 // per ogni motore di tipo engine esegue l'azione
@@ -158,13 +162,14 @@ class QMGR extends Command
                     $eng_options = json_decode($c->options);
 
                     Log::debug('engine:options:', [$eng_options] );
+
                     Log::debug('engine:options:', [$eng_options->method ] );
                     
                     // dd($eng_options);
                                 
                     $batch_id = $batch_uuid;
         
-                    // Prepara il JOB
+                    // Prepara il JOB ------------------------------------- -------------------------- -------------
                     
                     $job_id = [];
                     $job_id['description'] = 'API';
@@ -174,7 +179,6 @@ class QMGR extends Command
                     $job_id['batch_uuid'] = $batch_id;
                     $job_id['api_url'] = $c->api;
                     $job_id['status_url'] = $c->api_status;
-                                
             
                     $options = [
                         'dryRun' => $dryRun,
@@ -193,7 +197,6 @@ class QMGR extends Command
                     ];
 
                     $job_id['options'] = json_encode($options);
-
         
                     Log::channel('stack')->debug('WK_JOB_FOLDER:job_id', [$job_id]);
                 
@@ -206,11 +209,10 @@ class QMGR extends Command
 
             case "WK_BATCH" :
 
-                // simula l'esecuzione di un batch completo (solo converter)
-                // Precarica il file nella cartella e crea la prima cartella 
+                // Esegue un batch completo dopo essere stato creato da Upload ....
+                
+                $batch_uuid = "BATCH____1731423752932";
 
-
-                $batch_uuid = "BATCH_2024_10_12_09_42_09";
                 Log::channel('stack')->info('WK_BATCH:batch_uuid:', [$batch_uuid] );
                                 
                 $batch = CodaBatch::where(['batch_uuid' => $batch_uuid])->firstOrFail();
@@ -219,9 +221,11 @@ class QMGR extends Command
                 
                 Log::channel('stack')->info('WK_BATCH:ACTION', [$QMGR_ACTION] );
 
-                $dryRun_converter = true; // esegue una finta chiamata per verificare la struttura delle cartelle
-                $dryRun_cleaner = true; // esegue una finta chiamata per verificare la struttura delle cartelle
-                $dryRun_analyzer = true; // esegue una finta chiamata per verificare la struttura delle cartelle
+                $dryRun_converter = false; // esegue una finta chiamata per verificare la struttura delle cartelle
+                $dryRun_cleaner = false;   // esegue una finta chiamata per verificare la struttura delle cartelle
+                $dryRun_analyzer = false;  // esegue una finta chiamata per verificare la struttura delle cartelle
+
+                // elenco azioni da eseguire :::: DA RENDERE PARAMETRICO 
 
                 $batch_config = [
                     [
@@ -236,12 +240,15 @@ class QMGR extends Command
                         'fileFolderOut' => "NER_BATCH/" . $batch_uuid . "//02_CLEANER/",
                         'dryRun' => $dryRun_cleaner
                     ],
+
+                    
                     [
                         'engineType' => 'analyzer',
                         'fileFolderIn' => "NER_BATCH/" . $batch_uuid . "//02_CLEANER/",
                         'fileFolderOut' => "NER_BATCH/" . $batch_uuid . "//03_ANALYZER/",
                         'dryRun' => $dryRun_analyzer
                     ],
+                    
 
                     // TODO REPORT action ....
 
@@ -280,6 +287,8 @@ class QMGR extends Command
                         // Log::channel('stack')->info('WKLB:', [$files]);
                         // $allConv = CodaConfig::where(['type' => 'converter'])->get();
                         $job_list = [];
+
+                        // Per ogni azione del batch recupera i motori / engines ON!
             
                         foreach($batch_config as $b_c) 
                         {
@@ -287,17 +296,19 @@ class QMGR extends Command
                             
                             $job_list[$b_c['engineType']] = [];
                             # $files = Storage::files($b_c['fileFolderIn']);
-                            $engines = CodaConfig::where(['type' => $b_c['engineType']])->get();
+                            $engines = CodaConfig::where(['type' => $b_c['engineType']])
+                            ->where(['enable' => 'ON'])->get();
                             
                             
                             foreach($engines as $c)
                             {
                                 Log::debug('engine:', [$c] );
-                                Log::debug('engine:options', [$c->options] );
+                                
    
     
-                                $options = json_decode($c->options);
-                                Log::debug('engine:options:', [$options] );
+                                $engine_options = json_decode($c->options);
+
+                                Log::debug('engine:options:', [$engine_options] );
                             
                                 $batch_id = $batch_uuid;
     
@@ -315,13 +326,17 @@ class QMGR extends Command
             
                                 $options = [
                                     'dryRun' => $b_c['dryRun'],
-                                    'method' => $options->method, //
+                                    'method' => $engine_options->method, //
                                     'contentType' => 'text/plain',
                                     'headers' => [
                                         'application/pdf'
                                     ],
                                     'fileInput' => $b_c['fileFolderIn'],
                                     'fileOutput' => $b_c['fileFolderOut'],
+                                    'preAction' => $engine_options->preAction ?? false,
+                                    'postAction' => $engine_options->postAction ?? false,
+                                    'inType' => $engine_options->inType ?? "TXT",
+                                    'outType' => $engine_options->outType ?? false
                                 ];
 
                                 $job_id['options'] = json_encode($options);

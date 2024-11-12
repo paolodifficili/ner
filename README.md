@@ -49,6 +49,15 @@ File da lavorare 1) PDF (poi tanti) già caricato (UPLOAD)
 00_File input (PDF sources) copia dei file durante la creazione
 -- BATCH --
 
+##### UN BATCH GESTISCE UN FILE SOLO ###############
+
+
+una cartella per ogni ENGINE !!! 
+
+- input da passaggio precedente
+- input prima della chiamata
+- output 
+- altri dati (metadati ecc.)
 
 01_Converter/d (java, python) : text output JOB + di uno ed anche a pagine ed di diverso tipo (per un file esegue la conversione) risultato della conversione da PDF -> testo
 
@@ -162,3 +171,105 @@ php artisan migrate
 
 
 # Fpdi composer install laravel  - composer require setasign/fpdi
+
+
+
+GET
+https://cdn.jsdelivr.net/npm/@mdi/font@latest/css/materialdesignicons.min.css
+[HTTP/1.1 200 OK 0ms]
+
+GET
+https://cdn.jsdelivr.net/npm/vuetify@3.7.1/dist/vuetify.min.css
+[HTTP/1.1 200 OK 0ms]
+
+GET
+http://localhost:8000/js/mgr/app.js
+[HTTP/1.1 200 OK 13ms]
+
+GET
+http://localhost:8000/js/mgr/echo.iife.js
+[HTTP/1.1 200 OK 12ms]
+
+GET
+https://unpkg.com/vue@latest
+[HTTP/2 302  111ms]
+
+GET
+https://unpkg.com/vue-router@4
+[HTTP/2 302  167ms]
+
+GET
+https://cdn.jsdelivr.net/npm/vue3-sfc-loader
+[HTTP/2 200  0ms]
+
+GET
+https://cdn.jsdelivr.net/npm/vuetify@3.7.1/dist/vuetify.min.js
+[HTTP/2 200  0ms]
+
+Il layout è stato forzato prima che la pagina fosse completamente caricata. Se questo avviene prima del caricamento dei fogli di stile, potrebbe causare la visualizzazione di contenuti privi di stile (“flash of unstyled content”). markup.js:250:53
+GET
+https://unpkg.com/@mux/upchunk@3
+[HTTP/2 302  146ms]
+
+GET
+https://unpkg.com/axios/dist/axios.min.js
+[HTTP/2 302  142ms]
+
+GET
+https://cdnjs.cloudflare.com/ajax/libs/pusher/7.0.3/pusher.min.js
+[HTTP/2 200  0ms]
+
+GET
+https://unpkg.com/axios@1.7.7/dist/axios.min.js
+[HTTP/2 200  0ms]
+
+GET
+https://unpkg.com/vue-router@4.4.5
+[HTTP/2 302  0ms]
+
+GET
+https://unpkg.com/@mux/upchunk@3.4.0
+[HTTP/2 302  0ms]
+
+GET
+https://unpkg.com/vue-router@4.4.5/dist/vue-router.global.js
+[HTTP/2 200  0ms]
+
+GET
+https://unpkg.com/@mux/upchunk@3.4.0/dist/upchunk.js
+[HTTP/2 200  0ms]
+
+GET
+https://unpkg.com/vue@3.5.12
+[HTTP/2 302  0ms]
+
+GET
+https://unpkg.com/vue@3.5.12/dist/vue.global.js
+[HTTP/2 200  0ms]
+
+You are running a development build of Vue.
+Make sure to use the production build (*.prod.js) when deploying for production. vue@latest:12238:17
+INIT axios app.js:56:9
+INIT Reverb Push app.js:62:9
+localhost app.js:81:9
+Object { options: {…}, connector: {…} }
+app.js:96:9
+XHRGET
+http://localhost:8000/vue/app.vue
+[HTTP/1.1 200 OK 8ms]
+
+[Vue Router warn]: Component "default" in record with path "/batch/:id" is defined using "defineAsyncComponent()". Write "() => import('./MyPage.vue')" instead of "defineAsyncComponent(() => import('./MyPage.vue'))". vue-router@4:51:20
+GET
+http://localhost:8000/favicon.ico
+[HTTP/1.1 200 OK 0ms]
+
+GET
+ws://localhost:7888/app/my-app-key?protocol=7&client=js&version=7.0.3&flash=false
+[HTTP/1.1 101 Switching Protocols 4ms]
+
+app.vue initi GotMessage vue3-sfc-loader line 118 > Function:3:609
+XHRGET
+http://localhost:8000/vue/batch_item.vue
+[HTTP/1.1 200 OK 6ms]
+
+BATCH____1731417560323

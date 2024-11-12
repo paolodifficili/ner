@@ -446,7 +446,7 @@ class QueueController extends Controller
                 Log::debug('QueueController:mgrBatch:', ['CHECK_CONFIG'] );
 
                 // $allConv = CodaConfig::where(['type' => 'converter'])->get();
-                $allConv = CodaConfig::where(['id' => 44])->get();
+                $allConv = CodaConfig::where(['enable' => 'ON'])->get();
                 // $allConv = CodaConfig::all();
 
                 // $batch_id = $request->batch_uuid;

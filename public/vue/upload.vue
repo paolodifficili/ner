@@ -16,11 +16,14 @@
       }
     },
     methods: {
+
       async getData() {
         const res = await fetch("https://jsonplaceholder.typicode.com/posts");
         const finalRes = await res.json();
         this.listItems = finalRes;
       },
+
+ 
 
       gotoConfig() {
         console.log('gotoConfig .....');
@@ -28,39 +31,73 @@
 
    
 
-      startBatch () {
-        this.addLog('Batch starting .....');
-        this.updateLog(2, "Batch started!")
-        this.stopLog(2)
+      async startBatch (BATCH_UUID) {
+
+        console.log('startBatch', BATCH_UUID);
+        this.addItem(BATCH_UUID, 'Starting... ' + BATCH_UUID + " ... ");
+        
+        const obj = {
+           "BATCH_UUID" : BATCH_UUID
+        };
+
+        console.log(obj);
+
+        const requestOptions = {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(obj)
+        };
+
+        try {
+          const response = await fetch('/api/qmgr', requestOptions);
+          if (!response.ok) {
+            console.error('Errore nel recuperare i dati');
+            this.updateItem(BATCH_UUID, 'Starting ' + BATCH_UUID + " ERROR!");
+            this.stopItem(BATCH_UUID, "red");
+          } else {
+            console.log('Batch avviato!');
+            const jsonData = await response.json();
+            console.log(jsonData);
+            this.updateItem(BATCH_UUID, 'Starting ' + BATCH_UUID + " success!");
+            this.stopItem(BATCH_UUID, "green");
+          }
+      
+        } catch (err) {
+            this.updateItem(BATCH_UUID, 'Creating ' + BATCH_UUID + " ERROR!" + err.message);
+            this.stopItem(BATCH_UUID, "red");
+            console.error(err.message);
+        } 
+
 
       },
 
       createBatchConfig()
       {
         console.log('createBatchConfig .....');
-        this.createBatch('CHECK_CONFIG', '');
+        const BATCH_UUID = 'BATCH____' + Date.now();
+        this.createBatch(BATCH_UUID, 'CHECK_CONFIG', '');
       },
 
       createBatchAnalyze()
       {
         console.log('createBatchAnalyze .....');
-        this.createBatch('RUN_ENGINE', this.file_uuid);
+        const BATCH_UUID = 'BATCH____' + Date.now();
+        this.createBatch(BATCH_UUID, 'RUN_ENGINE', this.file_uuid);
       },
 
 
-      createBatch(action, file_uuid) {
+      createBatch(BATCH_UUID, action, file_uuid) {
 
         // action RUN_ENGINE, CHECK_CONFIG
 
         
         // da prendere dopo l'upload ...
-        this.file_uuid = '1730979689955';
-
-        const BATCH_UUID = 'BATCH____' + Date.now();
+        // this.file_uuid = '1730979689955';
+        // const BATCH_UUID = 'BATCH____' + Date.now();
 
         this.addItem('BATCH', 'Creating ' + BATCH_UUID + " ... ");
 
-        console.log('runBatch .....' , BATCH_UUID, action, file_uuid);
+        console.log('createBatch .....' , BATCH_UUID, action, file_uuid);
 
         const ops = {
           action_selected : action,
@@ -102,13 +139,11 @@
 
               this.batch_id = data.data.batch_uuid;
 
-              this.updateItem('BATCH', 'Creating ' + BATCH_UUID + " succes!");
+              this.updateItem('BATCH', 'Creating ' + BATCH_UUID + " success!");
               this.stopItem('BATCH', "green");
 
-              // this.startBatch()
-
-            
-            
+              this.startBatch(BATCH_UUID);
+    
             })
 
             .catch(error => {
@@ -200,7 +235,8 @@
             // this.dialogInfo.text = "Upload success!";
             // this.dialog = true;
 
-            // this.createBatch();
+            const BATCH_UUID = 'BATCH____' + Date.now();
+            this.createBatch(BATCH_UUID, 'RUN_ENGINE', this.file_uuid);
 
         });
         
@@ -281,6 +317,13 @@
     execListItem(i) {
       console.log('execListItem .....', i);
       console.log(this.items[i]);
+      console.log(this.items[i].key);
+      this.$router.push('/batch/' + this.items[i].key);
+    },
+
+    gotoBatch(item) {
+      console.log('gotoBatch');
+      this.$router.push('/batch/' + item.batch_uuid);
     },
 
     addLog(text) {

@@ -91,49 +91,62 @@ class ApiJobFolder implements ShouldQueue
     public function handle()
     {
 
-        Log::debug('ApiJobFolder:START:', [$this->job->uuid() ] );
+        Log::debug('ApiJobFolder:START: >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>       ', [$this->job->uuid() ] );
+
         $this->jobInfo['__UUID__'] = $this->job->uuid();
 
-        Log::debug('ApiJobFolder:info:', [$this->jobInfo] );
+        Log::debug('ApiJobFolder:info:          ', [$this->jobInfo] );
+        Log::debug('ApiJobFolder:engine:        ', [$this->jobInfo['engine']] );
+        Log::debug('ApiJobFolder:engine_version:', [$this->jobInfo['engine_version']] );
 
         
-
         $options = json_decode($this->jobInfo['options']);
 
         // Set default for a 
 
-        Log::debug('ApiJobFolder:options:', [$options] );
+        Log::debug('ApiJobFolder:options:     ', [$options] );
 
         // fileInput viene al momento usato come FOLDER INPUT
-        Log::debug('ApiJobFolder:FILE IS FOLDER-INPUT----:', [$options->fileInput ?? false] );
-        Log::debug('ApiJobFolder:fileInput:', [$options->fileInput ?? false] );
-        Log::debug('ApiJobFolder:fileOutput:', [$options->fileOutput ?? false] );
+        Log::debug('ApiJobFolder:fileInput :FOLDER IN :', [$options->fileInput ?? false] );
+        Log::debug('ApiJobFolder:fileOutput:FOLDER OUT:', [$options->fileOutput ?? false] );
 
-        Log::debug('ApiJobFolder:contentType:', [$options->contentType ?? false] );
-        Log::debug('ApiJobFolder:headers:', [$options->headers ?? false] );
-        Log::debug('ApiJobFolder:method:', [$options->method ?? false] );
-        Log::debug('ApiJobFolder:dryRun:', [$options->dryRun ?? false] );
-        Log::debug('ApiJobFolder:preAction:', [$options->preAction ?? false] );
-        Log::debug('ApiJobFolder:postAction:', [$options->postAction ?? false] );
+        Log::debug('ApiJobFolder:contentType: ', [$options->contentType ?? false] );
+        Log::debug('ApiJobFolder:headers:     ', [$options->headers ?? false] );
+        Log::debug('ApiJobFolder:method:      ', [$options->method ?? false] );
+        Log::debug('ApiJobFolder:dryRun:      ', [$options->dryRun ?? false] );
+        Log::debug('ApiJobFolder:preAction:   ', [$options->preAction ?? false] );
+        Log::debug('ApiJobFolder:postAction:  ', [$options->postAction ?? false] );
+        Log::debug('ApiJobFolder:inType:      ', [$options->inType ?? false] );
+        Log::debug('ApiJobFolder:outType:     ', [$options->outType ?? false] );
+
+
 
         // $url = "https://dummy.restapiexample.com/api/v1/employee/1";
         $status_url = $this->jobInfo['status_url'];
         $api_url = $this->jobInfo['api_url'];
-       
 
+        $inType = $options->inType ?? false;
+        $ouType = $options->outType ?? false;
+       
 
         $fileFolderIn = $options->fileInput;
         $fileFolderOut = $options->fileOutput;
 
-        // LEGGE TUTTI IL FILE DELLA CARTELLA INPUT e per ognuno esegue la chiamata ...
-        $files = Storage::files($fileFolderIn);
-        Log::debug('ApiJobFolder:files:', [$files] );
+        // LEGGE TUTTI IL FILE DI TESTO .txt         DELLA CARTELLA INPUT e per ognuno esegue la chiamata ...
+        
+        // $files = Storage::files($fileFolderIn);
+
+        $files = collect(Storage::files($fileFolderIn))->filter(function ($file) use ($inType) {
+            return (pathinfo($file, PATHINFO_EXTENSION) === $inType);
+        });
+        
+        
+        Log::debug('ApiJobFolder:files:     ', [$files] );
 
         foreach($files as $fname)
         {
 
-            Log::debug('ApiJobFolder:CALL!----START-------------------:',[]);
-
+            
             $engine = $this->jobInfo['engine'];
             $engine_version = $this->jobInfo['engine_version'];
 
@@ -148,6 +161,7 @@ class ApiJobFolder implements ShouldQueue
             Log::debug('ApiJobFolder:fileOut:',[$fileOut]);
 
             $fileJIN = $fileFolderOut . "/" . $path_parts['filename'] . "-" . $engine . '-' . $engine_version . "_IN.json";
+
             $fileJOUT = $fileFolderOut . "/" . $path_parts['filename'] . "-" . $engine . '-' . $engine_version . "_OUT.json";
 
 
@@ -174,7 +188,7 @@ class ApiJobFolder implements ShouldQueue
             // save a fake output and exit
             if($options->dryRun ?? false) {
 
-                Log::debug('ApiJobFolder:#####DRY_RUN######:', [] );
+                Log::debug('ApiJobFolder:#####DRY_RUN###################################:', [] );
                 Storage::write($fileOut, 'DRY_RUN');
                 $coda->status = 200;
                 $coda->save();
@@ -183,21 +197,27 @@ class ApiJobFolder implements ShouldQueue
         
                 try {
 
-                    Log::debug('ApiJobFolder:method:', [$options->method] );
-                    Log::debug('ApiJobFolder:api:', [$api_url] );
-                    Log::debug('ApiJobFolder:fileIn:', [$fileIn] );
-                    Log::debug('ApiJobFolder:fileOut:', [$fileOut] );
+                    Log::debug('ApiJobFolder:engine:', [$this->jobInfo['engine']]);
+                    Log::debug('ApiJobFolder:engine_version:', [$this->jobInfo['engine_version']]);
+  
 
-                    Log::debug('ApiJobFolder:preAction:', [$options->preAction ?? false] );
+                    Log::debug('ApiJobFolder:method:    ', [$options->method] );
+                    Log::debug('ApiJobFolder:api:       ', [$api_url] );
+                    Log::debug('ApiJobFolder:fileIn:    ', [$fileIn] );
+                    Log::debug('ApiJobFolder:fileOut:   ', [$fileOut] );
+
+                    Log::debug('ApiJobFolder:preAction: ', [$options->preAction ?? false] );
                     Log::debug('ApiJobFolder:postAction:', [$options->postAction ?? false] );
 
                     $content2analyze = Storage::get($fileIn);
                     
 
                     // Esegue il wrapper 
-                    if ($options->preAction) {
+                    if ($options->preAction ?? false) {
+                        Log::debug('ApiJobFolder:preAction:', [$options->preAction] );
                         $content2analyze = $this->dataWrapper($content2analyze, $options->preAction, $options );
                     }
+
                     Storage::write($fileJIN, $content2analyze);
 
 
@@ -212,17 +232,22 @@ class ApiJobFolder implements ShouldQueue
                         // Storage::write($fileOut, $response->body());
                         $statusBody = $response->body(); 
                         $statusCode = $response->status();
+
                     } elseif ($options->method == "POST_FORM") {
                         
+
+                        Log::debug('ApiJobFolder:POST_FORM: ', [$path_parts['basename']]);
+
                         $response = Http::attach(
                             'file', // Nome del parametro file nella richiesta
                             $content2analyze, // Contenuto del file
-                            'GDPR_PARTE_1.pdf' // Nome del file inviato
+                            $path_parts['basename'] // Nome del file inviato
                         )
                         ->post($api_url);
 
                         $statusBody = $response->body(); 
                         $statusCode = $response->status();
+
                     } elseif ($options->method == "PUT") {
                         $response = Http::withBody(
                             $content2analyze, 'application/pdf'
@@ -237,13 +262,14 @@ class ApiJobFolder implements ShouldQueue
                         $statusBody = 'METHOD! NOT! FOUND!'; 
                         $statusCode = 998;
                         $statusDescription = 'METHOD! NOT! FOUND!';
+
                         Log::error('ApiJobFolder:METHOD! NOT! FOUND!:', [$response->status()] );
                     }
 
 
                     Storage::write($fileJOUT, $statusBody);
 
-                    if ($options->postAction) {
+                    if ($options->postAction ?? false) {
                         $statusBody = $this->dataWrapper($statusBody, $options->postAction, $options );
                     } 
                     
