@@ -28,7 +28,18 @@ ApiJobFolder
 
 come parametri prende un Engine e tutte le sue configurazioni per la chiamata ed una cartella
 
-Per ogni file della cartella esegue tante chiamate API ed produce tante risposte denominate
+Per ogni file della cartella JSON è un file strutturato
+
+Il nome del file engine+engine_version+TIME_STAMP
+{
+    "inputFile" : "Folder ecc. nome_file_input.",
+    "inputFileContent" : "???",
+    "options" : [],
+    "output" : "",
+
+}
+
+esegue tante chiamate API ed produce tante risposte denominate
 
 fileInput + engine + engine_version . txt ecc.
 
@@ -163,6 +174,8 @@ class ApiJobFolder implements ShouldQueue
             $fileJIN = $fileFolderOut . "/" . $path_parts['filename'] . "-" . $engine . '-' . $engine_version . "_IN.json";
 
             $fileJOUT = $fileFolderOut . "/" . $path_parts['filename'] . "-" . $engine . '-' . $engine_version . "_OUT.json";
+
+            $fileJSON_OUT = $fileFolderOut . "/" . $engine . '-' . $engine_version . Carbon::now()  .  ".json";
 
 
             $coda = CodaJob::firstOrCreate([

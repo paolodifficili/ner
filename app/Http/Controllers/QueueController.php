@@ -248,10 +248,10 @@ class QueueController extends Controller
         if ( $ops->files_selected ?? false ) {
 
             foreach($ops->files_selected as $fId) {
-                Log::channel('stack')->info('QueueController:fId:', [$fId] );
+                Log::channel('stack')->info('QueueController:files_selected:fId:', [$fId] );
                 $f = CodaFile::find($fId);
     
-                Log::channel('stack')->info('QueueController:f:', [$f] );
+                Log::channel('stack')->info('QueueController:files_selected:f:', [$f] );
     
                 $oldFile = $f->file_path . "/" . $f->file_name;
                 $newFile = $batch_folder . "/00_INPUT/" . $f->file_name;
@@ -270,20 +270,32 @@ class QueueController extends Controller
 
             foreach($ops->files_uuid as $fId) {
 
-                Log::channel('stack')->info('QueueController:fId:', [$fId] );
+                if ($fId == "0") {
 
-                $f = CodaFile::where(['file_uuid' => $fId])->firstOrFail();
-                    
-                Log::channel('stack')->info('QueueController:f:', [$f] );
-    
-                $oldFile = $f->file_path . "/" . $f->file_name;
-                $newFile = $batch_folder . "/00_INPUT/" . $f->file_name;
-    
-                Log::channel('stack')->info('QueueController:copy:', [$oldFile, $newFile] );
-    
-                Storage::copy($oldFile, $newFile);
-    
-                $f2conv[] = $newFile;
+                    Log::channel('stack')->info('QueueController:files_uuid:SKIP!:', [$fId] );
+
+                } else {
+
+                    Log::channel('stack')->info('QueueController:files_uuid:fId:', [$fId] );
+
+                    $f = CodaFile::where(['file_uuid' => $fId])->firstOrFail();
+                        
+                    Log::channel('stack')->info('QueueController:files_uuid:f:', [$f] );
+        
+                    $oldFile = $f->file_path . "/" . $f->file_name;
+                    $newFile = $batch_folder . "/00_INPUT/" . $f->file_name;
+        
+                    Log::channel('stack')->info('QueueController:copy:', [$oldFile, $newFile] );
+        
+                    Storage::copy($oldFile, $newFile);
+        
+                    $f2conv[] = $newFile;
+
+                }
+                
+                
+
+
             }
 
             

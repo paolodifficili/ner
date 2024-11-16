@@ -75,7 +75,7 @@
       {
         console.log('createBatchConfig .....');
         const BATCH_UUID = 'BATCH____' + Date.now();
-        this.createBatch(BATCH_UUID, 'CHECK_CONFIG', '');
+        this.createBatch(BATCH_UUID, 'CHECK_CONFIG', '0');
       },
 
       createBatchAnalyze()
@@ -103,7 +103,7 @@
           action_selected : action,
           engines_selected : [],
           files_selected : [],
-          files_uuid : [this.file_uuid]
+          files_uuid : [file_uuid]
         };
 
         const obj = {

@@ -273,3 +273,8 @@ http://localhost:8000/vue/batch_item.vue
 [HTTP/1.1 200 OK 6ms]
 
 BATCH____1731417560323
+
+
+
+
+sZ3iVS~]P?x9Zh4

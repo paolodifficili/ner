@@ -207,11 +207,11 @@ class QMGR extends Command
                 break;
 
 
-            case "WK_BATCH" :
+            case "WK_BATCH":
 
                 // Esegue un batch completo dopo essere stato creato da Upload ....
                 
-                $batch_uuid = "BATCH____1731423752932";
+                $batch_uuid = "BATCH____1731583937171";
 
                 Log::channel('stack')->info('WK_BATCH:batch_uuid:', [$batch_uuid] );
                                 
@@ -368,8 +368,10 @@ class QMGR extends Command
 
                 $batch = Bus::batch([
                     $job_list['converter'], 
-                    $job_list['cleaner'],
-                    $job_list['analyzer'],
+// DA TOGLIERE                    $job_list['cleaner'],
+// DA TOGLIERE                    $job_list['analyzer'],
+                    
+                    
                     // $job_cleaner_list
                     ])->before(function (Batch $batch) {
                     Log::channel('stack')->info('*****WK_BATCH:before:', [$batch->id] );
@@ -598,28 +600,311 @@ class QMGR extends Command
                 break;
 
 
-            case "PUT":
+            case "EMULATOR":
 
-                $api_url = 'http://10.10.6.25:9998/tika';
-                Log::debug('ApiJob->check_url:PUT!', [$api_url] );
-                /*
-                $response = Http::attach(
-                    'attachment', file_get_contents('D:/tmp/simple.pdf'), 'simple.pdf', ['Content-Type' => 'application/pdf']
-                )
-                ->withOptions(['verify' => false])
-                ->put($api_url);
+                // APIJOBFOLDER BATCH EMULATOR
+                $batch_uuid = "BATCH____1731583937171";
+                $dryRun_converter = false;
+                $dryRun_cleaner = false;
+                $dryRun_analyzer = false;
 
-                */
+                $batch_config = [
+                    /*
+                    [
+                        'engineType' => 'converter',
+                        'fileFolderIn' => "NER_BATCH/" . $batch_uuid . "//00_INPUT/",
+                        'fileFolderOut' => "NER_BATCH/" . $batch_uuid . "//01_CONVERTER/",
+                        'dryRun' => $dryRun_converter
+                    ],
+                    */
+                    /*
+                    [
+                        'engineType' => 'cleaner',
+                        'fileFolderIn' => "NER_BATCH/" . $batch_uuid . "//01_CONVERTER/",
+                        'fileFolderOut' => "NER_BATCH/" . $batch_uuid . "//02_CLEANER/",
+                        'dryRun' => $dryRun_cleaner
+                    ],
+                    */
+                    
+                    [
+                        'engineType' => 'analyzer',
+                        'fileFolderIn' => "NER_BATCH/" . $batch_uuid . "//02_CLEANER/",
+                        'fileFolderOut' => "NER_BATCH/" . $batch_uuid . "//03_ANALYZER/",
+                        'dryRun' => $dryRun_analyzer
+                    ],
+                    
 
-                $response = Http::withBody(
-                    file_get_contents('D:/tmp/simple.pdf'), 'application/pdf'
-                )->put($api_url);
+                ];
 
 
-                Log::debug('ApiJob->response:', [$response] );
+                foreach($batch_config as $b_c) 
+                {
+                    Log::debug('----------------------------------------------------------------', [] );
+                    Log::debug('EMULATOR', [$b_c['engineType'] , $b_c['fileFolderIn']] );
+                    Log::debug('----------------------------------------------------------------', [] );
+                    
+                    // $job_list[$b_c['engineType']] = [];
+                    # $files = Storage::files($b_c['fileFolderIn']);
+
+                    $engines = CodaConfig::where(['type' => $b_c['engineType']])
+                    ->where(['enable' => 'ON'])->get();
+                    
+
+foreach($engines as $c)
+{
+                        
+                Log::debug('APIJOBFOLDER:', [$c->type ,$c->engine, $c->engine_version] );
+                        
+
+
+                Log::debug('APIJOBFOLDER:EMULATOR: ', []);
+
+
+                $fileFolderIn = $b_c['fileFolderIn'];
+                $fileFolderOut = $b_c['fileFolderOut'];
+             
+
+                Log::debug('APIJOBFOLDER:', [$c->type ,$c->engine, $c->engine_version] );
+                
+                $options = json_decode($c->options);
+                
+                $inputTag = $options->inputTag ?? false;
+                $outputTag = $options->outputTag ?? false;
+
+                $type = $c->type;
+                $engine = $c->engine;
+                $engine_version = $c->engine_version;
+                $api_url = $c->api;
+                $method = $options->method;
+                $contentType = $options->contentType ?? false;
+
+                Log::debug('APIJOBFOLDER:url', [$api_url] );
+                Log::debug('APIJOBFOLDER:method', [$method] );
+                Log::debug('APIJOBFOLDER:contentType', [$contentType] );
+                Log::debug('APIJOBFOLDER:inputTag', [$inputTag] );
+                Log::debug('APIJOBFOLDER:outputTag', [$outputTag] );
+
+                $inType = $options->inType ?? "json";
+                Log::debug('APIJOBFOLDER:inType', [$inType] );
+
+                $files = collect(Storage::files($fileFolderIn))->filter(function ($file) use ($inType) {
+                    return (pathinfo($file, PATHINFO_EXTENSION) === $inType);
+                });
+                Log::debug('ApiJobFolder:files:     ', [$files] );
+                
+                foreach($files as $fname)
+                {
+                    
+                    $fileIn = $fname;
+                    $ts = Carbon::now()->format('Y_m_d_H_i_s_u');
+                    $fileOut = $fileFolderOut . $engine . '-' . $engine_version . '-' . $ts  .  ".json";
+
+                    Log::debug('APIJOBFOLDER:fileIn :', [$fileIn] );
+                    Log::debug('APIJOBFOLDER:fileOut:', [$fileOut] );
+
+                    $j_output = [];
+                    
+                    $j_output['engine'] = $engine;
+                    $j_output['type'] = $type;
+                    $j_output['engine_version'] = $engine_version;
+                    $j_output['fileIn'] = $fileIn;
+
+                    $path_parts = pathinfo($fileIn);
+                    
+                    $statusCode = 123;
+                    $statusDescription = 'Success!';
+                    $statusBody = '';
+
+                    
+
+                if($inputTag) {
+                    Log::debug('APIJOBFOLDER:outputTag', [$inputTag] );
+                    $j_tmp = Storage::get($fileIn);
+                    $j = json_decode($j_tmp);
+                    $content2analyze = $j->{$inputTag};
+                } else {
+                    $content2analyze = Storage::get($fileIn);    
+                }
+
+
+                if($options->method == "POST") {
+                    // $response = Http::withBody( $content2analyze, $contentType )->post($api_url);    
+                    // ContentType ???
+                    $response = Http::withBody( $content2analyze)->post($api_url);    
+                    $statusBody = $response->body(); 
+                    $statusCode = $response->status();
+
+                } elseif ($options->method == "POST_FORM") {
+    
+                    Log::debug('APIJOBFOLDER:POST_FORM: ', [$path_parts['basename']]);
+
+                    $response = Http::attach(
+                        'file', // Nome del parametro file nella richiesta
+                        $content2analyze, // Contenuto del file
+                        $path_parts['basename'] // Nome del file inviato
+                    )
+                    ->post($api_url);
+
+                    $statusBody = $response->body(); 
+                    $statusCode = $response->status();
+
+                } elseif ($options->method == "PUT") {
+                    $response = Http::withBody(
+                        $content2analyze, 'application/pdf'
+                    )->put($api_url);    
+                    $statusBody = $response->body(); 
+                    $statusCode = $response->status();
+                } elseif ($options->method == "GET") {
+                    $response = Http::get($api_url, []);
+                    $statusBody = $response->body(); 
+                    $statusCode = $response->status();
+                } else {
+                    $statusBody = 'METHOD! NOT! FOUND!'; 
+                    $statusCode = 998;
+                    $statusDescription = 'METHOD! NOT! FOUND!';
+
+                    Log::error('APIJOBFOLDER:METHOD! NOT! FOUND!:', [$response->status()] );
+                }
+
+
+
+                // Log::debug('ApiJob->response:', [$response] );
+                $statusCode = $response->status();
+                $j_output['status'] = $statusCode;
+                Log::debug('APIJOBFOLDER:response->status:', [$statusCode] );
+
+                $j = json_decode($response->body());
+                Log::debug('APIJOBFOLDER:response->status:', [$response->body()] );
+
+                // dd($j->{"X-TIKA:content"});
+
+                $j_output['res_output'] = json_decode($response->body());
+               
+
+
+                if($outputTag) {
+                    Log::debug('APIJOBFOLDER:outputTag:', [$outputTag] );
+                    $j_output['output'] = $j->{$outputTag};
+                } else {
+                    $j_output['output'] = $j;
+                }
+
+                
+
+                // Log::debug('ApiJob->response:', [$response->body()] );
+
+                Storage::write($fileOut, json_encode($j_output));
+                Log::debug('APIJOBFOLDER:fileOut:created!:', [$fileOut] );
+
+
+                // dd($j_output);
+
+                // dd($j_output);
+
+
+                }
+}
+
+                }
+
+/*
+                
+
+
+
+                $ts = Carbon::now()->format('Y_m_d_H_i_s_e');
+                $fileOut = $fileFolderOut . "/" . $engine . '-' . $engine_version . '-' . $ts  .  ".json";
+                               
+
+                $j_output['fileIn'] = $fileIn;
+                $j_output['engine'] = $c->engine;
+                $j_output['type'] = $c->type;
+                $j_output['engine_version'] = $c->engine_version;
+
+
+                $path_parts = pathinfo($fileIn);
+                Log::debug('APIJOBFOLDER:EMULATOR:inputFile ', [$fileIn]);
+
+                $api_url = $c->api;
+                
+                Log::debug('APIJOBFOLDER:url', [$api_url] );
+                Log::debug('APIJOBFOLDER:method', [$options->method] );
+                Log::debug('APIJOBFOLDER:contentType', [$options->contentType ?? false] );
+                
+                $outputTag = $options->outputTag ?? false;
+
+                $statusCode = 123;
+                $statusDescription = 'Success!';
+                $statusBody = '';
+
+                $content2analyze = Storage::get($fileIn);
+
+                if($options->method == "POST") {
+
+                    $response = Http::withBody( $content2analyze, $options->contentType )->post($api_url);    
+                    // Log::debug('ApiJobFolder:POST:', [$fileOut] );
+                    // Storage::write($fileOut, $response->body());
+                    $statusBody = $response->body(); 
+                    $statusCode = $response->status();
+
+                } elseif ($options->method == "POST_FORM") {
+                    
+
+                    Log::debug('ApiJobFolder:POST_FORM: ', [$path_parts['basename']]);
+
+                    $response = Http::attach(
+                        'file', // Nome del parametro file nella richiesta
+                        $content2analyze, // Contenuto del file
+                        $path_parts['basename'] // Nome del file inviato
+                    )
+                    ->post($api_url);
+
+                    $statusBody = $response->body(); 
+                    $statusCode = $response->status();
+
+                } elseif ($options->method == "PUT") {
+                    $response = Http::withBody(
+                        $content2analyze, 'application/pdf'
+                    )->put($api_url);    
+                    $statusBody = $response->body(); 
+                    $statusCode = $response->status();
+                } elseif ($options->method == "GET") {
+                    $response = Http::get($api_url, []);
+                    $statusBody = $response->body(); 
+                    $statusCode = $response->status();
+                } else {
+                    $statusBody = 'METHOD! NOT! FOUND!'; 
+                    $statusCode = 998;
+                    $statusDescription = 'METHOD! NOT! FOUND!';
+
+                    Log::error('ApiJobFolder:METHOD! NOT! FOUND!:', [$response->status()] );
+                }
+
+
+
+                // Log::debug('ApiJob->response:', [$response] );
                 $statusCode = $response->status();
                 Log::debug('ApiJob->response:', [$statusCode] );
-                Log::debug('ApiJob->response:', [$response->body()] );
+
+                $j = json_decode($response->body());
+
+                // dd($j->{"X-TIKA:content"});
+
+                $j_output['res_output'] = json_decode($response->body());
+
+
+                if($outputTag) {
+                    Log::debug('Response:outputTag', [$outputTag] );
+                    $j_output['output'] = $j->{$outputTag};
+                } else {
+                    $j_output['output'] = $j;
+                }
+
+                
+*/
+                // Log::debug('ApiJob->response:', [$response->body()] );
+
+        
 
                 break;
 
