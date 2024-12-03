@@ -201,12 +201,55 @@ class QueueController extends Controller
             $jobs = [];
             $out = $batch;
         }
-
-
         
         // $codaJson = json_encode($coda);
 
         Log::channel('stack')->info('QueueController:showBatch:', [$jobs, $batch] );
+
+      
+        return response()->json($out);
+
+        // return $codaJson;
+    }
+
+
+    // mostra le info relativo allo storage di un batch cartelle e file json con i risultati
+
+    public function showBatchStorage(String $batchId = null)
+    {
+        Log::channel('stack')->info('QueueController:showBatchStorage:', [$batchId] );
+     
+
+        $batch_folder = "NER_BATCH/" . $batchId;
+
+        $file_list = Storage::allFiles($batch_folder);
+
+        Log::channel('stack')->info('QueueController:showBatchStorage:', [$file_list]);
+
+        $out = [];
+
+        foreach($file_list as $item ) {
+
+            // read contents
+            Log::channel('stack')->info('QueueController:showBatchStorage:read:', [$item]);
+
+
+            $obj = [];
+            $obj["batchId"] = $batchId;
+            $obj["fileName"] = $item;
+           
+            if (str_ends_with($item, 'json')) {
+                $contents = Storage::get($item);
+                $obj["fileContent"] = json_decode($contents);
+            } else {
+                $contents = $item;
+                $obj["fileContent"] = $contents;
+            }
+
+            $out[] = $obj;
+
+        }
+
 
       
         return response()->json($out);

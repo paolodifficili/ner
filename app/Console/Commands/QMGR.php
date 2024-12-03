@@ -603,28 +603,47 @@ class QMGR extends Command
             case "EMULATOR":
 
                 // APIJOBFOLDER BATCH EMULATOR
+
+                /*
+                    engine : 
+                    type :
+                    engine_version :
+                    fileIn : 
+                    prompt : 
+                    status : 
+                    filename : 
+                    res_output : 
+                    output : 
+
+                */
+
+
+
                 $batch_uuid = "BATCH____1731583937171";
                 $dryRun_converter = false;
                 $dryRun_cleaner = false;
                 $dryRun_analyzer = false;
+                $HTTP_TIMEOUT_SEC = 180;
+
+                // configura le esecuzioni dei batch secondo la tipologia
 
                 $batch_config = [
-                    /*
+                    
                     [
                         'engineType' => 'converter',
                         'fileFolderIn' => "NER_BATCH/" . $batch_uuid . "//00_INPUT/",
                         'fileFolderOut' => "NER_BATCH/" . $batch_uuid . "//01_CONVERTER/",
                         'dryRun' => $dryRun_converter
                     ],
-                    */
-                    /*
+                    
+                    
                     [
                         'engineType' => 'cleaner',
                         'fileFolderIn' => "NER_BATCH/" . $batch_uuid . "//01_CONVERTER/",
                         'fileFolderOut' => "NER_BATCH/" . $batch_uuid . "//02_CLEANER/",
                         'dryRun' => $dryRun_cleaner
                     ],
-                    */
+                    
                     
                     [
                         'engineType' => 'analyzer',
@@ -646,30 +665,31 @@ class QMGR extends Command
                     // $job_list[$b_c['engineType']] = [];
                     # $files = Storage::files($b_c['fileFolderIn']);
 
-                    $engines = CodaConfig::where(['type' => $b_c['engineType']])
-                    ->where(['enable' => 'ON'])->get();
+                    // recupera tutti i motori di un certo tipo ed abilitati
+                    $engines = CodaConfig::where(['type' => $b_c['engineType']])->where(['enable' => 'ON'])->get();
                     
 
 foreach($engines as $c)
 {
                         
-                Log::debug('APIJOBFOLDER:', [$c->type ,$c->engine, $c->engine_version] );
-                        
+                Log::debug('APIJOBFOLDER:-----------------------------------------', [] );
+                Log::debug('APIJOBFOLDER:type           :', [$c->type] );
+                Log::debug('APIJOBFOLDER:engine         :', [$c->engine] );
+                Log::debug('APIJOBFOLDER:engine_version :', [$c->engine_version] );
 
-
-                Log::debug('APIJOBFOLDER:EMULATOR: ', []);
-
+                // recupero parametri 
 
                 $fileFolderIn = $b_c['fileFolderIn'];
                 $fileFolderOut = $b_c['fileFolderOut'];
              
-
-                Log::debug('APIJOBFOLDER:', [$c->type ,$c->engine, $c->engine_version] );
-                
                 $options = json_decode($c->options);
                 
-                $inputTag = $options->inputTag ?? false;
+                $inputTag = $options->inputTag ?? false; // tag che diventerà l'input per il motore successivo
                 $outputTag = $options->outputTag ?? false;
+
+                $promptTxt = $options->promptTxt ?? false;
+                $promptTag = $options->promptTag ?? false;
+                $model = $options->model ?? false;
 
                 $type = $c->type;
                 $engine = $c->engine;
@@ -677,20 +697,27 @@ foreach($engines as $c)
                 $api_url = $c->api;
                 $method = $options->method;
                 $contentType = $options->contentType ?? false;
-
-                Log::debug('APIJOBFOLDER:url', [$api_url] );
-                Log::debug('APIJOBFOLDER:method', [$method] );
-                Log::debug('APIJOBFOLDER:contentType', [$contentType] );
-                Log::debug('APIJOBFOLDER:inputTag', [$inputTag] );
-                Log::debug('APIJOBFOLDER:outputTag', [$outputTag] );
-
                 $inType = $options->inType ?? "json";
-                Log::debug('APIJOBFOLDER:inType', [$inType] );
+
+                Log::debug('APIJOBFOLDER:url        :', [$api_url] );
+                Log::debug('APIJOBFOLDER:method     :', [$method] );
+                Log::debug('APIJOBFOLDER:contentType:', [$contentType] );
+                Log::debug('APIJOBFOLDER:inputTag   :', [$inputTag] );
+                Log::debug('APIJOBFOLDER:outputTag  :', [$outputTag] );
+                Log::debug('APIJOBFOLDER:promptTxt  :', [$inputTag] );
+                Log::debug('APIJOBFOLDER:promptTag  :', [$outputTag] );
+                Log::debug('APIJOBFOLDER:model      :', [$model] );
+                Log::debug('APIJOBFOLDER:inType     :', [$inType] );
+
+                // ricerca i file di tipo $inType ....
 
                 $files = collect(Storage::files($fileFolderIn))->filter(function ($file) use ($inType) {
                     return (pathinfo($file, PATHINFO_EXTENSION) === $inType);
                 });
-                Log::debug('ApiJobFolder:files:     ', [$files] );
+
+                // file da elaborare    
+
+                Log::debug('APIJOBFOLDER:files to analyze :', [$files] );
                 
                 foreach($files as $fname)
                 {
@@ -715,10 +742,30 @@ foreach($engines as $c)
                     $statusDescription = 'Success!';
                     $statusBody = '';
 
-                    
+                    // SOLO SE IL FILE INPUT è JSON ESEGUE IL CONTROLLO dello status
 
+                    if (str_ends_with($fileIn, 'json')) {
+                        Log::debug('APIJOBFOLDER:status check!', [] );
+
+                        $jj_tmp = Storage::get($fileIn);
+                        $jj = json_decode($jj_tmp);
+                        $sourceStatusCode = $jj->{"status"};
+                        Log::debug('APIJOBFOLDER:status check::-->', [$sourceStatusCode] );
+        
+                        if ($sourceStatusCode != 200) {
+                            $method = "SOURCE_CODE_STATUS_ERROR";
+                            Log::error('APIJOBFOLDER:previous status code ERROR!', [$sourceStatusCode, $method] );
+                        }
+
+                    } else {
+                        Log::debug('APIJOBFOLDER:SKIP! status check!', [] );
+                    }
+
+                // Controllail tag status del json verificare che la chiamata precedente sia OK
+             
+                // inputTag esiste si estrae il contenuto dal json, altrimenti tutto il file ...
                 if($inputTag) {
-                    Log::debug('APIJOBFOLDER:outputTag', [$inputTag] );
+                    Log::debug('APIJOBFOLDER:inputTag', [$inputTag] );
                     $j_tmp = Storage::get($fileIn);
                     $j = json_decode($j_tmp);
                     $content2analyze = $j->{$inputTag};
@@ -727,14 +774,51 @@ foreach($engines as $c)
                 }
 
 
-                if($options->method == "POST") {
+                // Se esiste il TAG prompt (Txt e Tag)  bisogna creare un prompt ...
+                if ($promptTxt && $promptTag ) {
+                    
+                    Log::debug('APIJOBFOLDER:Make prompt', [$promptTxt] );
+                    
+                    /*
+                            {
+                            "model": "llama3.2",
+                            "prompt": "Why is the sky blue?",
+                            "stream": false
+                            }'
+                    */
+                    
+                    // str_replace("world", "Peter", "Hello world!"); // Outputs: Hello Peter!
+                    $prompt = str_replace($promptTag, $content2analyze, $promptTxt);
+                    Log::debug('APIJOBFOLDER:PROMPT!', [$prompt] );
+        
+                    $data = [];
+                    $data['model'] = $model;
+                    $data['prompt'] = $prompt;
+                    $data['stream'] = false;
+        
+                    $content2analyze =  json_encode($data);
+                    $j_output['prompt'] = $content2analyze;
+
+                    Log::debug('APIJOBFOLDER:PROMPT!', [$content2analyze] );
+
+                }
+
+    // Preparati tutti i dati esegue la chiamata al motore
+
+    try {
+
+                Log::debug('APIJOBFOLDER:try method:', [$method] );
+
+                if($method == "POST") {
                     // $response = Http::withBody( $content2analyze, $contentType )->post($api_url);    
                     // ContentType ???
-                    $response = Http::withBody( $content2analyze)->post($api_url);    
+
+                    Log::debug('APIJOBFOLDER:POST_FORM: ', [$path_parts['basename'], $HTTP_TIMEOUT_SEC]);
+                    $response = Http::timeout($HTTP_TIMEOUT_SEC)->withBody( $content2analyze)->post($api_url);    
                     $statusBody = $response->body(); 
                     $statusCode = $response->status();
 
-                } elseif ($options->method == "POST_FORM") {
+                } elseif ($method == "POST_FORM") {
     
                     Log::debug('APIJOBFOLDER:POST_FORM: ', [$path_parts['basename']]);
 
@@ -748,39 +832,39 @@ foreach($engines as $c)
                     $statusBody = $response->body(); 
                     $statusCode = $response->status();
 
-                } elseif ($options->method == "PUT") {
+                } elseif ($method == "PUT") {
                     $response = Http::withBody(
                         $content2analyze, 'application/pdf'
                     )->put($api_url);    
                     $statusBody = $response->body(); 
                     $statusCode = $response->status();
-                } elseif ($options->method == "GET") {
+                } elseif ($method == "GET") {
                     $response = Http::get($api_url, []);
                     $statusBody = $response->body(); 
                     $statusCode = $response->status();
+                } elseif ($method == "SOURCE_CODE_STATUS_ERROR") {
+                    $statusBody = '{"response": "SOURCE_CODE_STATUS_ERROR"}'; 
+                    $statusCode = 500;
                 } else {
                     $statusBody = 'METHOD! NOT! FOUND!'; 
                     $statusCode = 998;
                     $statusDescription = 'METHOD! NOT! FOUND!';
-
-                    Log::error('APIJOBFOLDER:METHOD! NOT! FOUND!:', [$response->status()] );
+                    Log::error('APIJOBFOLDER:METHOD! NOT! FOUND!:', [] );
                 }
 
-
-
                 // Log::debug('ApiJob->response:', [$response] );
-                $statusCode = $response->status();
+             
                 $j_output['status'] = $statusCode;
-                Log::debug('APIJOBFOLDER:response->status:', [$statusCode] );
+                Log::debug('APIJOBFOLDER:response->statusCode:', [$statusCode] );
 
-                $j = json_decode($response->body());
-                Log::debug('APIJOBFOLDER:response->status:', [$response->body()] );
+                $j = json_decode($statusBody);
+                Log::debug('APIJOBFOLDER:response->statusBody:', [$statusBody] );
 
                 // dd($j->{"X-TIKA:content"});
 
-                $j_output['res_output'] = json_decode($response->body());
+                $j_output['res_output'] = json_decode($statusBody);
                
-
+                // se esiste outputTag viene estratto dalla risposta ed inserito nel file di output
 
                 if($outputTag) {
                     Log::debug('APIJOBFOLDER:outputTag:', [$outputTag] );
@@ -788,120 +872,40 @@ foreach($engines as $c)
                 } else {
                     $j_output['output'] = $j;
                 }
-
                 
 
+                Log::channel('stack')->debug('*************************************:', []);    
+                Log::channel('stack')->debug('',[$j_output['output']]);    
+                Log::channel('stack')->debug('*************************************:', []);    
+              
+
                 // Log::debug('ApiJob->response:', [$response->body()] );
+            
+              
+            }  catch (\Exception $e) {
+                    Log::channel('stack')->error('--------------------------------------------------------:', [$e->getMessage()]);    
+                    Log::channel('stack')->error('--------------------------------------------------------:', [$e->getMessage()]);    
+                    Log::channel('stack')->error('ApiJobFolder APIJOBFOLDER:', [$e->getMessage()]);    
+                    Log::channel('stack')->error('--------------------------------------------------------:', [$e->getMessage()]);    
+                    Log::channel('stack')->error('--------------------------------------------------------:', [$e->getMessage()]);    
+                    
+                    $j_output['status'] = '500';
+                    $j_output['output'] = $e->getMessage();
+            }
 
-                Storage::write($fileOut, json_encode($j_output));
-                Log::debug('APIJOBFOLDER:fileOut:created!:', [$fileOut] );
+
+            Storage::write($fileOut, json_encode($j_output));
+            Log::debug('APIJOBFOLDER:fileOut:created!:', [$fileOut] );
 
 
-                // dd($j_output);
-
-                // dd($j_output);
-
+            
 
                 }
+
 }
 
                 }
 
-/*
-                
-
-
-
-                $ts = Carbon::now()->format('Y_m_d_H_i_s_e');
-                $fileOut = $fileFolderOut . "/" . $engine . '-' . $engine_version . '-' . $ts  .  ".json";
-                               
-
-                $j_output['fileIn'] = $fileIn;
-                $j_output['engine'] = $c->engine;
-                $j_output['type'] = $c->type;
-                $j_output['engine_version'] = $c->engine_version;
-
-
-                $path_parts = pathinfo($fileIn);
-                Log::debug('APIJOBFOLDER:EMULATOR:inputFile ', [$fileIn]);
-
-                $api_url = $c->api;
-                
-                Log::debug('APIJOBFOLDER:url', [$api_url] );
-                Log::debug('APIJOBFOLDER:method', [$options->method] );
-                Log::debug('APIJOBFOLDER:contentType', [$options->contentType ?? false] );
-                
-                $outputTag = $options->outputTag ?? false;
-
-                $statusCode = 123;
-                $statusDescription = 'Success!';
-                $statusBody = '';
-
-                $content2analyze = Storage::get($fileIn);
-
-                if($options->method == "POST") {
-
-                    $response = Http::withBody( $content2analyze, $options->contentType )->post($api_url);    
-                    // Log::debug('ApiJobFolder:POST:', [$fileOut] );
-                    // Storage::write($fileOut, $response->body());
-                    $statusBody = $response->body(); 
-                    $statusCode = $response->status();
-
-                } elseif ($options->method == "POST_FORM") {
-                    
-
-                    Log::debug('ApiJobFolder:POST_FORM: ', [$path_parts['basename']]);
-
-                    $response = Http::attach(
-                        'file', // Nome del parametro file nella richiesta
-                        $content2analyze, // Contenuto del file
-                        $path_parts['basename'] // Nome del file inviato
-                    )
-                    ->post($api_url);
-
-                    $statusBody = $response->body(); 
-                    $statusCode = $response->status();
-
-                } elseif ($options->method == "PUT") {
-                    $response = Http::withBody(
-                        $content2analyze, 'application/pdf'
-                    )->put($api_url);    
-                    $statusBody = $response->body(); 
-                    $statusCode = $response->status();
-                } elseif ($options->method == "GET") {
-                    $response = Http::get($api_url, []);
-                    $statusBody = $response->body(); 
-                    $statusCode = $response->status();
-                } else {
-                    $statusBody = 'METHOD! NOT! FOUND!'; 
-                    $statusCode = 998;
-                    $statusDescription = 'METHOD! NOT! FOUND!';
-
-                    Log::error('ApiJobFolder:METHOD! NOT! FOUND!:', [$response->status()] );
-                }
-
-
-
-                // Log::debug('ApiJob->response:', [$response] );
-                $statusCode = $response->status();
-                Log::debug('ApiJob->response:', [$statusCode] );
-
-                $j = json_decode($response->body());
-
-                // dd($j->{"X-TIKA:content"});
-
-                $j_output['res_output'] = json_decode($response->body());
-
-
-                if($outputTag) {
-                    Log::debug('Response:outputTag', [$outputTag] );
-                    $j_output['output'] = $j->{$outputTag};
-                } else {
-                    $j_output['output'] = $j;
-                }
-
-                
-*/
                 // Log::debug('ApiJob->response:', [$response->body()] );
 
         

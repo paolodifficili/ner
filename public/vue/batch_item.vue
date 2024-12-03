@@ -15,6 +15,7 @@
         batch_jobs: [],
         batch_item: {},
         listItems: [],
+        storageItems: [],
 
         file_list: [],
         config_list: [],
@@ -44,6 +45,13 @@
         console.log(this.batch_info);
         console.log(this.batch_jobs);
         console.log(this.batch_item);
+
+        const res0 = await fetch("/api/batchStorage/" + id );
+        const batchStorage = await res0.json(); 
+        this.storageItems = batchStorage;
+
+        console.log(this.storageItems);
+
 
         const res1 = await fetch("api/upload/list");
         this.file_list = await res1.json();
@@ -200,7 +208,7 @@
     dark
     flat
  >
-    <v-toolbar-title>Batch info - {{ $route.params.id }}</v-toolbar-title>
+    <v-toolbar-title>Batch info - {{ $route.params.id }} (batch_item.vue)</v-toolbar-title>
 </v-toolbar>
 
 
@@ -267,6 +275,75 @@
 </v-toolbar>
 
 
+<v-data-iterator
+    :items="storageItems"
+    item-value="fileName"
+  >
+    <template v-slot:default="{ items, isExpanded, toggleExpand }">
+      <v-row>
+        <v-col
+          v-for="item in items"
+          :key="item.fileName"
+          cols="12"
+          md="12"
+          sm="12"
+        >
+          <v-card>
+            <v-card-title class="d-flex align-center">
+              <v-icon
+                :color="(item.raw.fileContent.status != 200) ? 'red' : 'green'"
+                size="18"
+                start
+              >mdi-check-circle</v-icon>
+              ({{ item.raw.fileContent.status }})
+              {{ item.raw.fileContent.type }}
+              {{ item.raw.fileContent.engine }}
+              {{ item.raw.fileContent.engine_version }}
+              
+            </v-card-title>
+            <v-card-subtitle>
+            file name : {{ item.raw.fileName }}
+            </v-card-subtitle>
+
+
+            
+  <v-table theme="dark">
+    <tbody>
+      <tr><td>Engine name:</td><td>{{ item.raw.fileContent.engine }}</td></tr>
+      <tr><td>Engine version:</td><td>{{ item.raw.fileContent.engine_version }}</td></tr>
+      <tr><td>Engine type:</td><td>{{ item.raw.fileContent.type }}</td></tr>
+      <tr><td>File input:</td><td>{{ item.raw.fileName }}</td></tr>
+    </tbody>
+  </v-table>
+
+
+
+
+            <v-card-actions>
+              <v-switch
+                :label="`${isExpanded(item) ? 'Hide' : 'Show'} details`"
+                :model-value="isExpanded(item)"
+                density="compact"
+                inset
+                @click="() => toggleExpand(item)"
+              ></v-switch>
+            </v-card-actions>
+
+            <v-divider></v-divider>
+
+            <v-expand-transition>
+              <div v-if="isExpanded(item)">
+                  {{item.raw.fileContent.output}}
+              </div>
+            </v-expand-transition>
+
+          </v-card>
+        </v-col>
+      </v-row>
+    </template>
+  </v-data-iterator>
+
+
  <v-list lines="two">
       <v-list-subheader inset>Jobs</v-list-subheader>
 
@@ -291,6 +368,49 @@
 
       </v-list-item>
   </v-list>
+
+<v-toolbar
+    color="blue-grey"
+    dark
+    flat
+ >
+    <v-toolbar-title>Storage</v-toolbar-title>
+</v-toolbar>
+
+ <v-list lines="two">
+      <v-list-subheader inset>storageItems</v-list-subheader>
+
+      <v-list-item
+        v-for="item in storageItems"
+     >
+
+
+        <template v-slot:prepend>
+          <v-avatar color="grey-lighten-1">
+            <v-icon 
+            @click="showJob(folder)"
+            color="green">mdi-check-circle</v-icon>
+          </v-avatar>
+      
+        </template>
+
+
+      
+      <pre>BatchId: {{item.batchId}}</pre>
+      <pre>fileName: {{item.fileName}}</pre>
+      <pre>Type: {{item.fileContent.type}}</pre>
+      <pre>Engine name: {{item.fileContent.engine}}</pre>
+      <pre>Engine version:{{item.fileContent.engine_version}}</pre>
+      <pre>Status: {{item.fileContent.status}}</pre>
+
+
+      <pre>{{item.fileContent}}</pre>
+      
+
+      </v-list-item>
+  </v-list>
+
+
 
 <v-toolbar
     color="blue-grey"
